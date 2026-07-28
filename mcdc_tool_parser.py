@@ -99,9 +99,9 @@ def get_bool_expr_map(
 
             if not f.endswith(".c"):
                 continue
-            if f.startswith("tools/"):
+            if rel_f.startswith("tools/"):
                 continue
-            if f in SOURCE_SKIP_LIST:
+            if rel_f in SOURCE_SKIP_LIST:
                 continue
             args = entry["arguments"]
             if f in seen:
