@@ -107,7 +107,7 @@ def get_bool_expr_map(
             if f in seen:
                 continue
             seen.append(f)
-            async_results.append((rel_f, pool.apply_async(handle_file, (f, args))))
+            async_results.append((rel_f, pool.apply_async(handle_file, (rel_f, args))))
 
         print("Collecting async results...")
         for ar in async_results:
