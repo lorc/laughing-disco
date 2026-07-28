@@ -320,11 +320,8 @@ def handle_expression(ast: ASTEntry) -> SAST:
             # Handle builtins here
             match fname.name:
                 case "__builtin_expect":
-                    if not isinstance(args[1], IntLiteral) and args[1].value != 0:
-                        raise Exception("We support __builtin_expect() only in form __builtin_expect(expr, 0)")
                     fcall = FCall(ast.get_loc(), fname, args, ast)
                     fcall.update_location_range()
-                    print(fcall.loc_range)
                     ret = args[0]
                     ret.loc = fcall.loc
                     ret.loc_range = fcall.loc_range
