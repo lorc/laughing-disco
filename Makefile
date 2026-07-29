@@ -12,6 +12,45 @@ TEST_SRCS = \
 	tests/test_locations.c \
 	tests/test_complex_statement_expr.c \
 
+QUALIFICATION_TESTS = \
+	tests/qual/basics-001.c \
+	tests/qual/basics-002.c \
+	tests/qual/basics-003.c \
+	tests/qual/basics-004.c \
+	tests/qual/basics-005.c \
+	tests/qual/basics-006.c \
+	tests/qual/basics-007.c \
+	tests/qual/basics-008.c \
+	tests/qual/basics-009.c \
+	tests/qual/basics-010.c \
+	tests/qual/basics-011.c \
+	tests/qual/basics-012.c \
+	tests/qual/basics-013.c \
+	tests/qual/basics-014.c \
+	tests/qual/complex-001.c \
+	tests/qual/complex-002.c \
+	tests/qual/complex-003.c \
+	tests/qual/complex-004.c \
+	tests/qual/complex-005.c \
+	tests/qual/parsing-001.c \
+	tests/qual/parsing-002.c \
+	tests/qual/parsing-003.c \
+	tests/qual/parsing-004.c \
+	tests/qual/parsing-005.c \
+	tests/qual/parsing-006.c \
+	tests/qual/parsing-007.c \
+	tests/qual/parsing-008.c \
+	tests/qual/parsing-009.c \
+	tests/qual/parsing-010.c \
+	tests/qual/parsing-011.c \
+	tests/qual/parsing-012.c \
+	tests/qual/parsing-013.c \
+	tests/qual/parsing-014.c \
+	tests/qual/parsing-015.c \
+	tests/qual/parsing-016.c \
+
+
+TEST_SRCS += $(QUALIFICATION_TESTS)
 
 TEST_BINS = $(TEST_SRCS:.c=)
 TEST_ASMS = $(TEST_SRCS:.c=.s)
@@ -65,7 +104,7 @@ tests/%_coverage.info: tests/%_brtrace.dat tests/%_mcdc-dwarf.pickle mcdc_covera
 
 report: $(LCOV_INFOS)
 	@echo ">> Generating HTML coverage report..."
-	genhtml --branch-coverage --mcdc-coverage -o coverage-report $(LCOV_INFOS)
+	genhtml --ignore-errors empty --branch-coverage --mcdc-coverage -o coverage-report $(LCOV_INFOS)
 	@echo "Done! Open coverage-report/index.html in your browser."
 
 check: $(LCOV_INFOS) mcdc_report_compare.py
