@@ -910,8 +910,34 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         while skip < len(instructions):
             if instructions[skip].mnemonic in instr:
                 return state.derive(instr_idx=skip)
+            # Newer go past end of block
+            if instructions[skip].mnemonic in {"b", "ret"}:
+                break
             skip += 1
         return state
+
+    def ff_to_cond_instr(search_state: MatchState) -> MatchState:
+        branches = {"tbz", "tbnz", "cbz", "cbnz", "cset", "b.ne", "b.eq"}
+        fallbacks = {"str", "stur"}
+        fallback_idx = -1
+
+        for idx in range(search_state.instr_idx, len(instructions)):
+            mnem = instructions[idx].mnemonic
+
+            if mnem in branches:
+                return search_state.derive(instr_idx=idx)
+
+            if mnem in fallbacks:
+                fallback_idx = idx
+
+            # stop on exit of this block
+            if mnem in ("b", "ret"):
+                break
+
+        if fallback_idx != -1:
+            return search_state.derive(instr_idx=fallback_idx)
+
+        return search_state
 
     ret: list[TracePoint] = []
 
@@ -1216,34 +1242,14 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 raise Exception(f"Don't know what to do with operand {operand}")
 
     def handle_and_or(e: BoolExpression, state: MatchState) -> MatchState:
-        def get_cond_instr(search_state: MatchState) -> MatchState:
-            branches = {"tbz", "tbnz", "cbz", "cbnz", "cset"}
-            fallbacks = {"str", "stur"}
-            fallback_idx = -1
-
-            for idx in range(search_state.instr_idx, len(instructions)):
-                mnem = instructions[idx].mnemonic
-
-                if mnem in branches:
-                    return search_state.derive(instr_idx=idx)
-
-                if mnem in fallbacks:
-                    fallback_idx = idx
-
-                # stop on exit of this block
-                if mnem in ("b", "ret"):
-                    break
-
-            if fallback_idx != -1:
-                return search_state.derive(instr_idx=fallback_idx)
-
-            return search_state
-
-        new_state = handle_operand(e.a, state)
-        new_state = match_optional_store(new_state)
+        if isinstance(e.a, BoolExpression):
+            new_state = handle_operand(e.a, state)
+            new_state = match_optional_store(new_state)
+        else:
+            new_state = state
 
         if not isinstance(e.a, BoolExpression):
-            new_state = get_cond_instr(new_state)
+            new_state = ff_to_cond_instr(new_state)
 
             match instructions[new_state.instr_idx].mnemonic:
                 case "tbz":
@@ -1274,11 +1280,15 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             TRACE_MATCH("Ignoring NOT(const value) as part of AND/OR expression")
             return new_state
 
-        new_state = handle_operand(e.b, new_state)
-        new_state = match_optional_store(new_state)
+        op_b_is_implicit_cast = isinstance(
+            e.b, BoolExpression) and e.b.op == BoolExpression.OP_IMPLICIT_CAST
 
-        if not isinstance(e.b, BoolExpression):
-            new_state = get_cond_instr(new_state)
+        if isinstance(e.b, BoolExpression) and not op_b_is_implicit_cast:
+            new_state = handle_operand(e.b, new_state)
+            new_state = match_optional_store(new_state)
+
+        if not isinstance(e.b, BoolExpression) or op_b_is_implicit_cast:
+            new_state = ff_to_cond_instr(new_state)
 
             match instructions[new_state.instr_idx].mnemonic:
                 case "tbz":
