@@ -406,9 +406,7 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
 
 def process_elf(fname: str,
                 mcdc_map: dict[str, MCDCExprInfo],
-                out_dwarf_pickle: str,
-                out_plugin_conf: str,
-                target_cu: Optional[str] = None):
+                target_cu: Optional[str] = None) -> list[ExprTraceInfo]:
     f = open(fname, "rb")
     elffile = ELFFile(f)
     if not elffile.has_dwarf_info():
@@ -437,15 +435,7 @@ def process_elf(fname: str,
         mcdcinfo = mcdc_map[cu_name]
         ret.extend(process_cu(cu, elffile, dis, mcdcinfo.expressions, mcdcinfo.inline_info))
 
-    print(f"Created {len(ret)} tracepoint objects")
-    with open(out_plugin_conf, "wt") as out:
-        out.write(f"; ELF name: {fname}\n")
-        for eti in ret:
-            out.write(eti.format())
-
-    with open(out_dwarf_pickle, "wb") as fp:
-        pickle.dump(ret, fp)
-
+    return ret
 
 @functools.lru_cache
 def _get_variable_loc(die: DIE, addr: int):
@@ -1547,15 +1537,21 @@ def main():
     global FAIL_FAST
     FAIL_FAST = args.fail
 
-    process_elf(args.executable, mcdc_data, args.output_pickle, args.out_plugin_conf,
-                args.compile_unit)
+    trace_info = process_elf(args.executable, mcdc_data, args.compile_unit)
 
+    log.info(f"Created {len(trace_info)} tracepoint objects")
+    with open(args.out_plugin_conf, "wt") as out:
+        out.write(f"; ELF name: {args.executable}\n")
+        for eti in trace_info:
+            out.write(eti.format())
+
+    with open(args.output_pickle, "wb") as fp:
+        pickle.dump(trace_info, fp)
 
     log.info(f"FAIL_COUNTER = {FAIL_COUNTER}")
     log.info(f"ELF_RANGE_FAIL_CNT = {ELF_RANGE_FAIL_CNT}")
     log.info(f"SIZEOF_NONE_CNT (included in FAIL_COUNTER) = {SIZEOF_NONE_CNT}")
     log.info(f"CODE_OUT_OF_SECTION = {CODE_OUT_OF_SECTION}")
-
 
 if __name__ == "__main__":
     main()
