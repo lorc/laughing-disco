@@ -647,7 +647,8 @@ def get_sizeof(cu: CompileUnit, name: str) -> Optional[int]:
                     while die.tag == "DW_TAG_typedef":
                         die = die.get_DIE_from_attribute("DW_AT_type")
                     TRACE_MATCH(die)
-                    return die.attributes["DW_AT_byte_size"].value
+                    if "DW_AT_byte_size" in die.attributes:
+                        return die.attributes["DW_AT_byte_size"].value
     return None
 
 
