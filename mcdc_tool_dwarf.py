@@ -813,6 +813,7 @@ class MatchState:
     int_const: Optional[int] = None
     saw_per_cpu: bool = False
     implicit_cast_one_more_try: bool = False
+    adds: bool = False
 
     def derive(self, **kwargs: Unpack[MatchState]):
         ret = copy(self)
@@ -1015,7 +1016,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 # Like <IntLiteral 8> * <IntLiteral 8> == <IntLiteral 64>
                 # match_sub_instr(instructions[state.instr_idx],
                 #                 state.target_reg, value)
-                return state.derive(instr_idx=state.instr_idx + 1, partial=False, int_const=value)
+                adds = instr.mnemonic == "adds"
+                return state.derive(instr_idx=state.instr_idx + 1, partial=False, int_const=value, adds=adds)
             case "mov":
                 # match_instr_const_operand(instr, 1, value)
                 return state.derive(instr_idx=state.instr_idx + 1,
@@ -1332,18 +1334,26 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         match instructions[new_state.instr_idx].mnemonic:
             case "b.lt" | "b.le" | "b.ls" | "b.lo":
                 inverted = op_is_gt_ge
+                if new_state.adds:
+                    inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "b.gt" | "b.ge" | "b.hs" | "b.hi" | "b.ne":
                 inverted = not op_is_gt_ge
+                if new_state.adds:
+                    inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbnz" | "cbnz":
                 inverted = op_is_gt_ge
+                if new_state.adds:
+                    inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbz" | "cbz":
                 inverted = not op_is_gt_ge
+                if new_state.adds:
+                    inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "cset":
