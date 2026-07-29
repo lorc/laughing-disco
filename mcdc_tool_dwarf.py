@@ -371,6 +371,13 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
     TRACE_CU("Inlines:")
     TRACE_CU(pformat(inlines))
     for next_expr in _get_next_expr_for_processing(dwarf_locs, expressions, inlines):
+        # Hack include end of inlined function if its start is in range
+        if _addr_inside_inlines(inlines, next_expr.end_addr):
+            for inline in inlines:
+                if _addr_inside_inline(
+                        inline, next_expr.end_addr) and inline.high_addr > next_expr.end_addr:
+                    next_expr.end_addr = inline.high_addr + 16
+                    TRACE_CU(f"Extending end of expr to {next_expr.end_addr:x}")
         try:
             data = get_code_for_range(elffile, next_expr.start_addr, next_expr.end_addr)
         except Exception:
