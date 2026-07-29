@@ -881,7 +881,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
     def match_optional_bool_cast(state: MatchState) -> MatchState:
         instr = instructions[state.instr_idx]
-        if instr.mnemonic == "and" and reg_cmp(get_instr_reg_operand(instr, 1), state.target_reg):
+        if instr.mnemonic in ("and", "bic") and reg_cmp(get_instr_reg_operand(instr, 1),
+                                                        state.target_reg):
             state.instr_idx += 1
             state.target_reg = get_instr_reg_operand(instr, 0)
         return state
