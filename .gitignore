@@ -7,7 +7,6 @@
 *.bc
 *.i
 *.ll
+*.info
 
-# Rule for tests is somewhat harder
-tests/*
-!tests/*.c
+
