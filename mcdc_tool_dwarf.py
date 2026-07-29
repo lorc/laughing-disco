@@ -1407,82 +1407,89 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 raise MatchError(f"Don't know how to handle {mnemonic} (OP_NOT)")
         return state
 
+    def handle_eq_xor(e: BoolExpression, state: MatchState) -> MatchState:
+        inverted: bool = e.op == BoolExpression.OP_XOR
+        # TODO: Special case: a == a
+        if isinstance(e.a, NonBoolVar) and isinstance(e.b, NonBoolVar) \
+           and e.a.name == e.b.name:
+            TRACE_MATCH(f"Found case {e.a.name} == {e.b.name}")
+            instr = instructions[state.instr_idx]
+            if instr.mnemonic == "cbnz":
+                ret.append(TracePoint(instructions[state.instr_idx].address, not inverted, e))
+                return state.derive(target_reg=None, partial=False)
+
+
+        new_state = handle_operand(e.a, state)
+        new_state = match_optional_store(new_state)
+        new_state = match_optional_bool_cast(new_state)
+        new_state = handle_operand(e.b, new_state)
+        new_state = match_optional_bool_cast(new_state)
+
+        new_state = match_optional_zero_mov(new_state)
+        new_state = match_optional_mov(new_state)
+        new_state = match_optional_mov(new_state)
+
+        #        if new_state.saw_per_cpu:
+        new_state = ff_to_instruction(new_state, ["subs", "adds"])
+
+        idx = new_state.instr_idx
+        # Optional subs/adds:
+        if instructions[idx].mnemonic in ("subs", "adds"):
+            idx += 1
+        # Optional write to variable
+        if instructions[idx].mnemonic in ("str", "stur"):
+            idx += 1
+        TRACE_MATCH(f"{instructions[idx].mnemonic=}")
+        match instructions[idx].mnemonic:
+            case "b.eq":
+                match_branch_isntr(instructions[idx], "b.eq")
+                match_branch_isntr(instructions[idx + 1], "b")
+                ret.append(TracePoint(instructions[idx].address, inverted, e))
+            case "b.ne":
+                match_branch_isntr(instructions[idx], "b.ne")
+                match_branch_isntr(instructions[idx + 1], "b")
+                ret.append(TracePoint(instructions[idx].address, not inverted, e))
+            case "cbnz":
+                match_branch_isntr(instructions[idx], "cbnz")
+                match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
+                match_branch_isntr(instructions[idx + 1], "b")
+                ret.append(TracePoint(instructions[idx].address, not inverted, e))
+            case "cbz":
+                match_branch_isntr(instructions[idx], "cbz")
+                match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
+                match_branch_isntr(instructions[idx + 1], "b")
+                ret.append(TracePoint(instructions[idx].address, inverted, e))
+            case "tbnz":
+                match_branch_isntr(instructions[idx], "tbnz")
+                match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
+                match_branch_isntr(instructions[idx + 1], "b")
+                ret.append(TracePoint(instructions[idx].address, not inverted, e))
+            case "tbz":
+                match_branch_isntr(instructions[idx], "tbz")
+                match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
+                match_branch_isntr(instructions[idx + 1], "b")
+                ret.append(TracePoint(instructions[idx].address, inverted, e))
+            case "cset":
+                # TBD: Match cset condition flags
+                ret.append(TracePoint(instructions[idx].address, inverted, e))
+                return new_state.derive(instr_idx=idx + 1)
+            case "csel":
+                # TBD: Match cset condition flags
+                ret.append(TracePoint(instructions[idx].address, inverted, e))
+                return new_state.derive(instr_idx=idx + 1)
+            case _:
+                raise MatchError(
+                    f"Expected for conditional branch, found {instructions[idx].mnemonic}")
+
+        return new_state.derive(instr_idx=idx + 2)
+
     @fuzzy_matcher
     def recurse(e: BoolExpression, state: MatchState) -> MatchState:
         TRACE_MATCH(f"Recurse, handling {e} at {e.loc}")
         assert isinstance(e, BoolExpression)
         match e.op:
             case BoolExpression.OP_EQ | BoolExpression.OP_XOR:
-                inverted: bool = e.op == BoolExpression.OP_XOR
-                # TODO: Special case: a == a
-                if isinstance(e.a, NonBoolVar) and isinstance(e.b, NonBoolVar) \
-                   and e.a.name == e.b.name:
-                    TRACE_MATCH(f"Found case {e.a.name} == {e.b.name}")
-                    instr = instructions[state.instr_idx]
-                    if instr.mnemonic == "cbnz":
-                        ret.append(TracePoint(instructions[state.instr_idx].address, not inverted, e))
-                        return state.derive(target_reg=None, partial=False)
-
-                new_state = handle_operand(e.a, state)
-                new_state = match_optional_store(new_state)
-                new_state = match_optional_bool_cast(new_state)
-                new_state = handle_operand(e.b, new_state)
-                new_state = match_optional_bool_cast(new_state)
-
-                new_state = match_optional_zero_mov(new_state)
-                new_state = match_optional_mov(new_state)
-
-                if new_state.saw_per_cpu:
-                    new_state = ff_to_instruction(new_state, ["subs", "adds"])
-                idx = new_state.instr_idx
-                # Optional subs/adds:
-                if instructions[idx].mnemonic in ("subs", "adds"):
-                    idx += 1
-                # Optional write to variable
-                if instructions[idx].mnemonic in ("str", "stur"):
-                    idx += 1
-                match instructions[idx].mnemonic:
-                    case "b.eq":
-                        match_branch_isntr(instructions[idx], "b.eq")
-                        match_branch_isntr(instructions[idx + 1], "b")
-                        ret.append(TracePoint(instructions[idx].address, inverted, e))
-                    case "b.ne":
-                        match_branch_isntr(instructions[idx], "b.ne")
-                        match_branch_isntr(instructions[idx + 1], "b")
-                        ret.append(TracePoint(instructions[idx].address, not inverted, e))
-                    case "cbnz":
-                        match_branch_isntr(instructions[idx], "cbnz")
-                        match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                        match_branch_isntr(instructions[idx + 1], "b")
-                        ret.append(TracePoint(instructions[idx].address, not inverted, e))
-                    case "cbz":
-                        match_branch_isntr(instructions[idx], "cbz")
-                        match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                        match_branch_isntr(instructions[idx + 1], "b")
-                        ret.append(TracePoint(instructions[idx].address, inverted, e))
-                    case "tbnz":
-                        match_branch_isntr(instructions[idx], "tbnz")
-                        match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                        match_branch_isntr(instructions[idx + 1], "b")
-                        ret.append(TracePoint(instructions[idx].address, not inverted, e))
-                    case "tbz":
-                        match_branch_isntr(instructions[idx], "tbz")
-                        match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                        match_branch_isntr(instructions[idx + 1], "b")
-                        ret.append(TracePoint(instructions[idx].address, inverted, e))
-                    case "cset":
-                        # TBD: Match cset condition flags
-                        ret.append(TracePoint(instructions[idx].address, inverted, e))
-                        return new_state.derive(instr_idx=idx + 1)
-                    case "csel":
-                        # TBD: Match cset condition flags
-                        ret.append(TracePoint(instructions[idx].address, inverted, e))
-                        return new_state.derive(instr_idx=idx + 1)
-                    case _:
-                        raise MatchError(
-                            f"Expected for conditional branch, found {instructions[idx].mnemonic}")
-
-                return new_state.derive(instr_idx=idx + 2)
+                return handle_eq_xor(e, state)
             case BoolExpression.OP_OR:
                 return handle_and_or(e, state)
             case BoolExpression.OP_AND:
