@@ -169,6 +169,7 @@ class SAST:
         self._is_var: Optional[bool] = None
         self._bool_const_val: Optional[bool] = None
         self.uuid = str(uuid.uuid4())
+        self.loc_range: CodeRange = None
 
         self.value: Optional[bool] = None
 
@@ -198,6 +199,8 @@ class SAST:
 
     # If only each ASTEntry had valid code range...
     def update_location_range(self):
+        if self.loc_range:
+            return
         if not self.inner:
             self.loc_range = self._base_range
         else:
