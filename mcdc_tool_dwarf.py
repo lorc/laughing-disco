@@ -1374,6 +1374,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             case "csel" | "csinc" | "cset" | "cinc":
                 ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
                 return state.advance()
+            case "orr":
+                if instructions[state.instr_idx + 1].mnemonic != "str":
+                    raise MatchError("Found implicit cast try with orr, but without store")
+                ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
+                return state.advance()
             case mnemonic:
                 if not state.implicit_cast_one_more_try:
                     # Try previous instruction as inlines sometimes span to
