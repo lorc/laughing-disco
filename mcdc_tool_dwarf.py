@@ -1374,25 +1374,25 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             new_state.instr_idx += 1
 
         match instructions[new_state.instr_idx].mnemonic:
-            case "b.lt" | "b.le" | "b.ls" | "b.lo":
+            case "b.lt" | "b.le" | "b.ls" | "b.lo" | "cbz":
                 inverted = op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
-            case "b.gt" | "b.ge" | "b.hs" | "b.hi" | "b.ne":
+            case "b.gt" | "b.ge" | "b.hs" | "b.hi" | "b.ne" | "cbnz":
                 inverted = not op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
-            case "tbnz" | "cbnz":
+            case "tbnz":
                 inverted = op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
-            case "tbz" | "cbz":
+            case "tbz":
                 inverted = not op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
