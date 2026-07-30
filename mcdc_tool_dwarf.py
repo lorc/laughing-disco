@@ -1530,13 +1530,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
-            case "cset":
-                # TBD: Match cset condition flags
-                ret.append(TracePoint(instructions[idx].address, inverted, e))
-                return new_state.derive(instr_idx=idx + 1)
-            case "csel":
-                # TBD: Match cset condition flags
-                ret.append(TracePoint(instructions[idx].address, inverted, e))
+            case "cset" | "csel":
+                instr = instructions[idx]
+                cc_str = instr.op_str.split(',')[-1].strip().lower()
+                if cc_str == "ne":
+                    ret.append(TracePoint(instr.address, not inverted, e))
+                else:
+                    ret.append(TracePoint(instr.address, inverted, e))
                 return new_state.derive(instr_idx=idx + 1)
             case _:
                 raise MatchError(
