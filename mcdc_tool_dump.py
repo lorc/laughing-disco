@@ -7,9 +7,11 @@ import json
 
 def load_mcdc_data(filename: str) -> list[SAST]:
     with open(filename, "rb") as f:
-        expressions: SAST = None
-        expressions, inlines  = pickle.load(f)
-        return expressions
+        mcdc_map = pickle.load(f)
+        all_expressions = []
+        for expr_info in mcdc_map.values():
+            all_expressions.extend(expr_info.expressions)
+        return all_expressions
 
 def load_mcdc_dwarf_data(filename: str) -> list[ExprTraceInfo]:
     with open(filename, "rb") as f:
