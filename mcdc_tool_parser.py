@@ -82,7 +82,8 @@ def insane_filter(expressions: list[SAST]):
     return expressions
 
 def get_bool_expr_map(
-        compile_commands: str
+        compile_commands: str,
+        compile_unit: str = None
     ) -> dict(str, MCDCExprInfo):
     compilation_db = open(compile_commands, "rt")
     db = json.load(compilation_db)
@@ -97,6 +98,8 @@ def get_bool_expr_map(
             work_dir: str = entry.get("directory", os.getcwd())
             rel_f: str = os.path.relpath(f, work_dir)
 
+            if compile_unit and compile_unit != rel_f:
+                continue
             if not f.endswith(".c"):
                 continue
             if rel_f.startswith("tools/"):
@@ -139,10 +142,11 @@ def main():
         "compile_commands",
         help="Path to the compile_commands.json file"
     )
+    parser.add_argument("-c", "--compile_unit", help="Compile Unit to process")
 
     args = parser.parse_args()
 
-    expr_info = get_bool_expr_map(args.compile_commands)
+    expr_info = get_bool_expr_map(args.compile_commands, args.compile_unit)
 
     with open(args.output_pickle, "wb") as f:
         pickle.dump(expr_info, f)
