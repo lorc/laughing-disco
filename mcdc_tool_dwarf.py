@@ -1527,6 +1527,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
     def recurse(e: BoolExpression, state: MatchState) -> MatchState:
         TRACE_MATCH(f"Recurse, handling {e} at {e.loc}")
         assert isinstance(e, BoolExpression)
+        if e.is_const():
+            TRACE_MATCH("Skipping const expression")
+            return state
         match e.op:
             case BoolExpression.OP_EQ | BoolExpression.OP_XOR:
                 return handle_eq_xor(e, state)
