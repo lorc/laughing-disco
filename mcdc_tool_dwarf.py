@@ -1424,7 +1424,12 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
                 return state.advance(2)
             case "csel" | "csinc" | "cset" | "cinc":
-                ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
+                instr = instructions[state.instr_idx]
+                cc_str = instr.op_str.split(',')[-1].strip().lower()
+                if cc_str == "eq":
+                    ret.append(TracePoint(instr.address, True, e))
+                else:
+                    ret.append(TracePoint(instr.address, False, e))
                 return state.advance()
             case "orr":
                 if instructions[state.instr_idx + 1].mnemonic != "str":
