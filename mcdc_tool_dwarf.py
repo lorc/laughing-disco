@@ -48,6 +48,10 @@ TRACE_EXPR_LOCATOR = functools.partial(null_trace, "ExprLocator")
 TRACE_CU = functools.partial(null_trace, "HandleCU")
 TRACE_MATCH = functools.partial(null_trace, "Match")
 
+# This is a hack to handle cases when we have multiple expressions
+# that access the same variable. I am looking at you, print_tainted()
+# in common/kernel.c
+LAST_SEEN_VAR: Optional[str] = None
 
 class DwarfInlinedFunc:
 
@@ -366,9 +370,12 @@ def _get_inlines_to_skip(expr: ExprAddressData, inlines: list[DwarfInlinedFunc],
         ret.append(c)
     return ret
 
+faillog = open("dwarf_parser_failures.log", "wt")
 
 def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
                s_file_locs: list[SFileLocMap]) -> list[TracePoint]:
+    global LAST_SEEN_VAR
+    LAST_SEEN_VAR = None
     cu_name: str = cu.get_top_DIE().attributes['DW_AT_name'].value.decode()
     TRACE_CU(f"Handling compile unit {cu_name}")
     dwarf_locs = parse_locs(cu, s_file_locs)
@@ -1079,6 +1086,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 raise MatchError(f"Don't know how to handle {mnemonic}")
 
     def handle_variable(operand: SAST, state: MatchState):
+        global LAST_SEEN_VAR
+        TRACE_MATCH(f"Handling variable {operand.name}")
         v = get_variable_at_loc(cu, instructions[state.instr_idx].address, operand.name)
         if not v:
             v = get_global_variable(elf, operand.name)
@@ -1133,11 +1142,15 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                         instr = instructions[state.instr_idx + 1]
                         if instr.mnemonic != "add":
                             match_instr_read_mem_operand(instr, 1, reg, rem)
+                            TRACE_MATCH(f"  Found read at 0x{instr.address:x}")
+                            LAST_SEEN_VAR = operand.name
                             return state.derive(instr_idx=state.instr_idx + 2,
                                                 target_reg=aarch64_reg_name(instr.operands[0].reg))
                         else:
                             # Pointers...
                             match_instr_const_operand(instr, 2, rem)
+                            TRACE_MATCH(f"  Found read at 0x{instr.address:x}")
+                            LAST_SEEN_VAR = operand.name
                             return state.derive(instr_idx=state.instr_idx + 2,
                                                 target_reg=aarch64_reg_name(instr.operands[0].reg))
 
@@ -1153,6 +1166,12 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                                             last_seen_var=operand.name)
 
                     case mnemonic:
+                        if LAST_SEEN_VAR == operand.name:
+                            # This handles clang optimisation of multiple access to the same variable
+                            TRACE_MATCH(
+                                f"   last seen variable {LAST_SEEN_VAR} at {instructions[state.instr_idx].address:x}"
+                            )
+                            return state
                         raise MatchError(f"Don't know how to handle {mnemonic} (addrx)")
 
             case "DW_OP_breg31":
