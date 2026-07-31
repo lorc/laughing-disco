@@ -1498,6 +1498,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         # Optional write to variable
         if instructions[idx].mnemonic in ("str", "stur"):
             idx += 1
+        new_state.instr_idx = idx
+        new_state = ff_to_instruction(new_state, ["b.eq", "b.ne"])
+        idx = new_state.instr_idx
         TRACE_MATCH(f"{instructions[idx].mnemonic=}")
         match instructions[idx].mnemonic:
             case "b.eq":
