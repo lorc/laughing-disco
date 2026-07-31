@@ -1158,7 +1158,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                         reg = get_instr_reg_operand(instr, 0)
                         TRACE_MATCH(f"  Found read at 0x{instr.address:x}")
                         return state.derive(instr_idx=state.instr_idx + 1, target_reg=reg)
-                    case "ldr":
+                    case mnemonic if mnemonic.startswith("ld"):
                         # This is a hack to handle compiler optimisation
                         return state.derive(instr_idx=state.instr_idx + 1,
                                             target_reg=aarch64_reg_name(instr.operands[0].reg),
