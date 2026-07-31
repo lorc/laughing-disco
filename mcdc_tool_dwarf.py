@@ -810,7 +810,6 @@ def match_sub_instr_regs(instr: capstone.CsInsn, reg1, reg2):
         )
 
     match_instr_reg_operand(instr, 1, reg1)
-    match_instr_reg_operand(instr, 2, reg2)
 
 
 class TracePoint:
