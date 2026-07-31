@@ -266,8 +266,8 @@ def qual_type_is_bool(qual_type: str) -> bool:
 
 class Nope(Exception):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, msg = None):
+        super().__init__(msg)
 
 
 def handle_expression(ast: ASTEntry) -> SAST:
@@ -361,7 +361,7 @@ def handle_expression(ast: ASTEntry) -> SAST:
             print(ast.data)
         #TODO
         if ast.data["name"] == "__alignof":
-            raise Nope()
+            raise Nope("Has __alignof")
         return NonBoolExpression(ast.get_loc(), ast.data["name"],
                                  [recurse(ast.inner[0])], ast)
 
@@ -375,7 +375,7 @@ def handle_expression(ast: ASTEntry) -> SAST:
     def recurse(ast: ASTEntry):
         # Filter out expressions which result is not used
         if parent_has_void_c_cast(ast):
-            raise Nope()
+            raise Nope("Has (void) cast")
 
         children = ast.inner
         match ast.kind:
@@ -463,8 +463,8 @@ def handle_expression(ast: ASTEntry) -> SAST:
 
     try:
         expr = recurse(ast)
-    except Nope:
-        print(f"Got Nope exception for {ast.get_loc()}")
+    except Nope as e:
+        print(f"Got Nope exception for {ast.get_loc()} ({e})")
         return []
 
     return list(map(BoolExpression.promote_double_not, expr.get_topmost_bool_expr()))
