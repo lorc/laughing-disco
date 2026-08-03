@@ -363,10 +363,13 @@ def _get_inlines_to_skip(expr: ExprAddressData, inlines: list[DwarfInlinedFunc],
     ret = []
     for inline in inlines:
         # This function is present in expr
-        if inline.name in used_funcs:
+        if inline.name in used_funcs or inline.name == expr.expr.function_name():
             continue
         # Inline actually covers all expr
         if inline.low_addr < expr.start_addr or inline.high_addr > expr.end_addr:
+            continue
+        # This may be parent inline function of current functions
+        if inline.low_addr <= expr.start_addr < inline.high_addr:
             continue
 
         # XXX: Make sure that we'll keep end of inlined function
@@ -976,9 +979,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 TRACE_MATCH(f"  Found candidate {inline}")
                 # Find idx for start address
                 for idx in range(state.instr_idx, len(instructions)):
-                    if instructions[idx].address == inline.low_addr:
+                    if inline.low_addr <= instructions[idx].address <= inline.high_addr:
                         TRACE_MATCH(
-                            f"  Found start of inlined function at addr {inline.low_addr:#x}")
+                            f"  Found start of inlined function at addr {instructions[idx].address:#x}")
                         break
                     else:
                         continue
@@ -1298,6 +1301,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             new_state = state
 
         if not isinstance(e.a, BoolExpression) and not e.a.is_const():
+            # might need to skip inlined func body
+            if type(e.a).__name__ == "FCall":
+                new_state = handle_operand(e.a, new_state)
+
             new_state = ff_to_cond_instr(new_state)
 
             match instructions[new_state.instr_idx].mnemonic:
@@ -1338,6 +1345,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             new_state = match_optional_store(new_state)
 
         if not isinstance(e.b, BoolExpression) or op_b_is_implicit_cast:
+            # might need to skip inlined func body
+            if type(e.b).__name__ == "FCall":
+                new_state = handle_operand(e.b, new_state)
+
             new_state = ff_to_cond_instr(new_state)
 
             match instructions[new_state.instr_idx].mnemonic:
