@@ -918,13 +918,18 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             state.instr_idx += 1
         return state
 
+    END_OF_BLOCK_INSTR = {
+        "b", "b.lt", "b.le", "b.ls", "b.lo", "b.gt", "b.ge", "b.hs", "b.hi", "tbnz", "cbnz", "tbz",
+        "cbz", "cset", "csel", "ret"
+    }
+
     def ff_to_instruction(state: MatchState, instr: list[str]) -> MatchState:
         skip = state.instr_idx
         while skip < len(instructions):
             if instructions[skip].mnemonic in instr:
                 return state.derive(instr_idx=skip)
             # Newer go past end of block
-            if instructions[skip].mnemonic in {"b", "ret"}:
+            if instructions[skip].mnemonic in END_OF_BLOCK_INSTR:
                 break
             skip += 1
         return state
@@ -944,7 +949,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 fallback_idx = idx
 
             # stop on exit of this block
-            if mnem in ("b", "ret"):
+            if mnem in END_OF_BLOCK_INSTR:
                 break
 
         if fallback_idx != -1:
