@@ -830,6 +830,7 @@ class MatchState:
     partial: bool = False
     last_seen_var: Optional[str] = None
     int_const: Optional[int] = None
+    landed_on_branch: bool = False
     saw_per_cpu: bool = False
     implicit_cast_one_more_try: bool = False
     adds: bool = False
@@ -1049,13 +1050,15 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
     def handle_int_const(value: int, state: MatchState):
         if value in (None, 0, 1, 0x1f, 4294967295, 2147483647):
-            block_end = ff_to_instruction(state, ["b"])
-            instr = instructions[block_end.instr_idx - 1]
-            if instr.mnemonic in ("cbnz", "cbz", "tbz", "tbnz"):
-                TRACE_MATCH(f"  found {instr.mnemonic}, passing control to caller")
+            cond_instr = ff_to_cond_instr(state)
+            instr = instructions[cond_instr.instr_idx]
+            if instr.mnemonic in ("cbnz", "cbz", "tbz", "tbnz", "cset"):
+                TRACE_MATCH(f"  found {instr}, passing control to caller")
                 # Let caller handle that case
-                return block_end.derive(instr_idx=block_end.instr_idx -1 , int_const=value)
+                return cond_instr.derive(instr_idx=cond_instr.instr_idx, int_const=value, landed_on_branch=True)
 
+        # Clean up indicator
+        state = state.derive(landed_on_branch = False)
         # Try to feed forward (for simple cases at least)
         if state.partial or not value:
             state = ff_to_instruction(state, ["subs", "adds"])
@@ -1490,25 +1493,27 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         new_state = handle_operand(e.a, state)
         new_state = match_optional_store(new_state)
         new_state = match_optional_bool_cast(new_state)
+        new_state = new_state.derive(landed_on_branch=False)
         new_state = handle_operand(e.b, new_state)
-        new_state = match_optional_bool_cast(new_state)
+        if not new_state.landed_on_branch:
+            new_state = match_optional_bool_cast(new_state)
 
-        new_state = match_optional_zero_mov(new_state)
-        new_state = match_optional_mov(new_state)
-        new_state = match_optional_mov(new_state)
+            new_state = match_optional_zero_mov(new_state)
+            new_state = match_optional_mov(new_state)
+            new_state = match_optional_mov(new_state)
 
-        #        if new_state.saw_per_cpu:
-        new_state = ff_to_instruction(new_state, ["subs", "adds"])
+            #        if new_state.saw_per_cpu:
+            new_state = ff_to_instruction(new_state, ["subs", "adds"])
 
-        idx = new_state.instr_idx
-        # Optional subs/adds:
-        if instructions[idx].mnemonic in ("subs", "adds"):
-            idx += 1
-        # Optional write to variable
-        if instructions[idx].mnemonic in ("str", "stur"):
-            idx += 1
-        new_state.instr_idx = idx
-        new_state = ff_to_instruction(new_state, ["b.eq", "b.ne"])
+            idx = new_state.instr_idx
+            # Optional subs/adds:
+            if instructions[idx].mnemonic in ("subs", "adds"):
+                idx += 1
+            # Optional write to variable
+            if instructions[idx].mnemonic in ("str", "stur"):
+                idx += 1
+            new_state.instr_idx = idx
+            new_state = ff_to_instruction(new_state, ["b.eq", "b.ne"])
         idx = new_state.instr_idx
         TRACE_MATCH(f"{instructions[idx].mnemonic=}")
         match instructions[idx].mnemonic:
