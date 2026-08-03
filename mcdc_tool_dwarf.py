@@ -371,7 +371,7 @@ def _get_inlines_to_skip(expr: ExprAddressData, inlines: list[DwarfInlinedFunc],
 
         # XXX: Make sure that we'll keep end of inlined function
         c = copy(inline)
-        c.high_addr =-4
+        c.high_addr -= 4
         ret.append(c)
     return ret
 
