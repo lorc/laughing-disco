@@ -1359,7 +1359,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         new_state = match_optional_zero_mov(new_state)
 
         new_state = ff_to_instruction(new_state, [
-            "subs", "b.lt", "b.le", "b.ls", "b.lo", "b.gt", "b.ge", "b.hs", "b.hi", "tbnz",
+            "b.lt", "b.le", "b.ls", "b.lo", "b.gt", "b.ge", "b.hs", "b.hi", "tbnz",
             "cbnz", "tbz", "cbz", "cset"
         ])
 
