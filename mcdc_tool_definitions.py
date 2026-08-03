@@ -435,6 +435,13 @@ class BoolExpression(SAST):
         OP_IMPLICIT_CAST: "(bool)",
     }
 
+    _CMP_OP_INV = {
+        OP_LT: OP_GE,
+        OP_LE: OP_GT,
+        OP_GT: OP_LE,
+        OP_GE: OP_LT,
+        }
+
     def __init__(self, loc: CodeLoc, ast: ASTEntry, opr_a: SAST, op, opr_b: Optional[SAST] = None):
         self._derived_init_(loc, ast, [opr_a, opr_b] if opr_b else [opr_a])
         self.op = op
@@ -488,8 +495,13 @@ class BoolExpression(SAST):
     def simplify(self):
         super().simplify()
         #  Convert "const == expr" to "expr == const"
-        if self.op == self.OP_EQ and self.a.is_const():
+        if self.op in (self.OP_EQ, self.OP_XOR) and self.a.is_const():
             self.inner[0], self.inner[1] = self.inner[1], self.inner[0]
+
+        # Do the same for other comparison ops, but invert direction as well
+        if self.op in (self._CMP_OP_INV.keys()) and self.a.is_const():
+            self.inner[0], self.inner[1] = self.inner[1], self.inner[0]
+            self.op = self._CMP_OP_INV[self.op]
 
     def get_leafs(self) -> list[BoolExpression]:
         # Arithmetic comparisons are always leafs
