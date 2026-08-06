@@ -163,12 +163,17 @@ def _collect_inlines(cu: CompileUnit) -> list[DwarfInlinedFunc]:
                 high_pc = child.attributes["DW_AT_high_pc"].value - 4
                 if child.attributes["DW_AT_high_pc"].form == "DW_FORM_data4":
                     high_pc += low_pc
-                if not "DW_AT_name" in func_info.attributes:
-                    # Some internal compiller stuff?
+                name = ""
+                if "DW_AT_name" in func_info.attributes:
+                    name = func_info.attributes["DW_AT_name"].value.decode()
+                elif "DW_AT_abstract_origin" in func_info.attributes:
+                    inline_die = func_info.get_DIE_from_attribute("DW_AT_abstract_origin")
+                    name = inline_die.attributes["DW_AT_name"].value.decode()
+                else:
+                    log.warn(f"Can't find function name for inline: {func_info=} {func_info.attributes=}")
                     continue
-                ret.append(
-                    DwarfInlinedFunc(func_info.attributes["DW_AT_name"].value.decode(), die, low_pc,
-                                     high_pc))
+
+                ret.append(DwarfInlinedFunc(name, die, low_pc, high_pc))
             if child.has_children:
                 ret.extend(_process_dies(child))
         return ret
