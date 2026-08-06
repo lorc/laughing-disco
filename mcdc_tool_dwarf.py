@@ -983,7 +983,14 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     else:
                         continue
                 else:
-                    continue
+                    # Last resort: sometimes inline ends right before the expression
+                    # is_pci_passthrough_enabled() in domU_assign_pci_device() is great example
+                    if inline.high_addr + 4 == instructions[0].address:
+                        TRACE_CU(f"Using {inline.name} as last resort")
+                        target_reg = get_instr_reg_operand(instructions[0], 0)
+                        return state.derive(instr_idx=0, target_reg=target_reg, partial=False)
+                    else:
+                        continue
                     # Find idx for end address
                 for idx in range(idx, len(instructions)):
                     if instructions[idx].address == inline.high_addr:
