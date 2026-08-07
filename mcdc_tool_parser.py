@@ -372,7 +372,7 @@ def handle_expression(ast: ASTEntry) -> SAST:
             return parent_has_void_c_cast(ast.parent)
         return False
 
-    def recurse(ast: ASTEntry):
+    def recurse(ast: ASTEntry, topmost:bool = False):
         # Filter out expressions which result is not used
         if parent_has_void_c_cast(ast):
             raise Nope("Has (void) cast")
@@ -393,8 +393,13 @@ def handle_expression(ast: ASTEntry) -> SAST:
             case "UnaryOperator":
                 return handle_unary_op(ast)
             case "CompoundAssignOperator":
-                # We are really interested only in the left part
-                return recurse(children[1])
+                if topmost:
+                    # We are really interested only in the left part
+                    # if this is a topmost expression
+                    return recurse(children[1])
+                else:
+                    # Else we need to handle both parts
+                    return handle_binary_op(ast)
             case "IntegerLiteral":
                 return IntLiteral(ast.get_loc(), int(ast.data["value"]), ast)
             case "CharacterLiteral":
@@ -462,7 +467,7 @@ def handle_expression(ast: ASTEntry) -> SAST:
                     f"Didn't expected AST kind {ast.kind} at {ast.get_loc()}")
 
     try:
-        expr = recurse(ast)
+        expr = recurse(ast, True)
     except Nope as e:
         print(f"Got Nope exception for {ast.get_loc()} ({e})")
         return []
