@@ -4,6 +4,7 @@ import pickle
 from collections import defaultdict
 from typing import Dict, List, Tuple, Any
 
+from mcdc_tool_definitions import BoolExpression
 from mcdc_tool_dwarf import ExprTraceInfo, TracePoint
 
 class TestVector:
@@ -246,16 +247,41 @@ def _find_mcdc_pairs(
 
     return pairs_found
 
+def _leaf_polarities(expr: Any, leafs: List[Any]) -> List[bool]:
+    polarities = []
+
+    for leaf in leafs:
+        negated = False
+        node = leaf
+
+        while node is not expr:
+            parent = getattr(node, 'parent', None)
+            if parent is None:
+                break
+
+            op = getattr(parent, 'op', None)
+            if op == BoolExpression.OP_NOT:
+                negated = not negated
+            elif op != BoolExpression.OP_IMPLICIT_CAST:
+                break
+
+            node = parent
+
+        polarities.append(negated)
+
+    return polarities
+
+
 def _find_branch_hits(
     test_vectors: List['TestVector'],
-    num_conditions: int
+    polarities: List[bool]
 ) -> List[Tuple[int, int]]:
     """
     Calculates True/False evaluation counts for every individual condition
     """
     branch_hits = []
 
-    for i in range(num_conditions):
+    for i, negated in enumerate(polarities):
         target_bit = 1 << i
 
         true_count = sum(
@@ -267,6 +293,9 @@ def _find_branch_hits(
             getattr(t, 'hit_count', 1) for t in test_vectors
             if (t.eval & target_bit) and not (t.val & target_bit)
         )
+
+        if negated:
+            true_count, false_count = false_count, true_count
 
         branch_hits.append((true_count, false_count))
 
@@ -287,6 +316,7 @@ def process_mcdc_coverage(
         expr = dwarf_info_list[0].expr
 
         leafs = expr.get_leafs()
+        polarities = _leaf_polarities(expr, leafs)
 
         addr_map = {}
         for dwarf_info in dwarf_info_list:
@@ -302,7 +332,7 @@ def process_mcdc_coverage(
 
             pairs_found = _find_mcdc_pairs(test_vectors, leafs)
 
-            branch_hits = _find_branch_hits(test_vectors, len(leafs))
+            branch_hits = _find_branch_hits(test_vectors, polarities)
         except Exception as e:
             print(f"  [!] Skipping evaluation for '{expr}' due to error: {e}")
             continue
@@ -314,6 +344,7 @@ def process_mcdc_coverage(
             file_coverage[expr.loc.file].append({
                 'expr': expr,
                 'leafs': leafs,
+                'polarities': polarities,
                 'pairs_found': pairs_found,
                 'branch_hits': branch_hits,
                 'total_hits': total_hits
@@ -342,6 +373,7 @@ def _write_file_records(file_handle, filepath: str, expressions: List[Dict]):
         for expr_data in expressions_by_line[line_num]:
             expr = expr_data['expr']
             leafs = expr_data['leafs']
+            polarities = expr_data['polarities']
             pairs_found = expr_data['pairs_found']
             branch_hits = expr_data['branch_hits']
             total_hits = expr_data['total_hits']
@@ -371,6 +403,9 @@ def _write_file_records(file_handle, filepath: str, expressions: List[Dict]):
             for i, leaf in enumerate(leafs):
                 is_covered = 1 if pairs_found[i] else 0
                 expr_str = str(leaf).replace(',', ' ')
+
+                if polarities[i]:
+                    expr_str = f"!({expr_str})"
 
                 file_handle.write(f"MCDC:{line_num},{mcdc_group_id},t,{is_covered},{i},{expr_str}\n")
                 file_handle.write(f"MCDC:{line_num},{mcdc_group_id},f,{is_covered},{i},{expr_str}\n")
