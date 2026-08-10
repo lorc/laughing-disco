@@ -1143,6 +1143,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                             f"   last seen variable {state.last_seen_var} at {instructions[state.instr_idx].address:x}"
                         )
                         return state
+                    if state.partial and (instr.mnemonic in END_OF_BLOCK_INSTR or
+                        instr.mnemonic in ("subs", "adds")):
+                        TRACE_MATCH(f"Found {instr.mnemonic} at {instr.address:x}")
+                        return state
                     raise
                 TRACE_MATCH(f"  Found read at 0x{instr.address:x}")
                 return state.derive(instr_idx=state.instr_idx + 1,
@@ -1207,7 +1211,14 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 target_reg = "sp"
                 offset = v.arg
                 instr = instructions[state.instr_idx]
-                match_instr_read_mem_operand(instr, 1, target_reg, offset)
+                try:
+                    match_instr_read_mem_operand(instr, 1, target_reg, offset)
+                except MatchError:
+                    if state.partial and (instr.mnemonic in END_OF_BLOCK_INSTR or
+                        instr.mnemonic in ("subs", "adds")):
+                        TRACE_MATCH(f"Found {instr.mnemonic} at {instr.address:x}")
+                        return state
+                    raise
                 TRACE_MATCH(f"  Found read at 0x{instr.address:x}")
                 return state.derive(instr_idx=state.instr_idx + 1,
                                     target_reg=aarch64_reg_name(instr.operands[0].reg))
