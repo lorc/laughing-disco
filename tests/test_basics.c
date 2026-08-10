@@ -3,6 +3,8 @@
 
 int global_var = 2;
 
+#define INT_MAX         ((int)(~0U>>1))
+
 int test_global_var()
 {
         if (global_var == 2)
@@ -32,6 +34,29 @@ int test_int_cmp(int a)
 
         if (a < 0)
                 return a;
+
+        return 0;
+}
+
+int test_uint_cmp(unsigned int a)
+{
+        if (a < 0)
+                return 1;
+
+        if (a > 0)
+                return 2;
+
+        if (a < 1)
+                return 3;
+
+        if (a > 1)
+                return 3;
+
+        if (a > INT_MAX)
+                return 4;
+
+        if (a < INT_MAX)
+                return 5;
 
         return 0;
 }
@@ -141,6 +166,10 @@ int main(int argc, char *argv[])
         test_int_cmp(1);
         test_int_cmp(2);
         test_int_cmp(4);
+
+        test_uint_cmp(0);
+        test_uint_cmp(1);
+        test_uint_cmp(23U);
 
         test_or(5);
         test_or(7);
