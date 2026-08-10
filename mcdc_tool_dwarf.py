@@ -1414,12 +1414,24 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 inverted = op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
+
+                mnemonic = instructions[new_state.instr_idx].mnemonic
+                if (e.op == BoolExpression.OP_LE and mnemonic in ("b.lt", "b.lo")) or \
+                   (e.op == BoolExpression.OP_LT and mnemonic in ("b.le", "b.ls")):
+                    inverted = not inverted
+
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "b.gt" | "b.ge" | "b.hs" | "b.hi" | "b.ne" | "cbnz":
                 inverted = not op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
+
+                mnemonic = instructions[new_state.instr_idx].mnemonic
+                if (e.op == BoolExpression.OP_GE and mnemonic in ("b.gt", "b.hi")) or \
+                   (e.op == BoolExpression.OP_GT and mnemonic in ("b.ge", "b.hs")):
+                    inverted = not inverted
+
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbnz":

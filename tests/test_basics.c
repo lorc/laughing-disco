@@ -38,7 +38,7 @@ int test_int_cmp(int a)
         return 0;
 }
 
-int test_uint_cmp(unsigned int a)
+int test_uint_cmp(unsigned int a, unsigned int b)
 {
         if (a < 0)
                 return 1;
@@ -57,6 +57,9 @@ int test_uint_cmp(unsigned int a)
 
         if (a < INT_MAX)
                 return 5;
+
+        if ((a << 3) >= b)
+                return 6;
 
         return 0;
 }
@@ -167,9 +170,9 @@ int main(int argc, char *argv[])
         test_int_cmp(2);
         test_int_cmp(4);
 
-        test_uint_cmp(0);
-        test_uint_cmp(1);
-        test_uint_cmp(23U);
+        test_uint_cmp(0, 2);
+        test_uint_cmp(1, 3);
+        test_uint_cmp(23U, 4);
 
         test_or(5);
         test_or(7);
