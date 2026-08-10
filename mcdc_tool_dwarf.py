@@ -1423,13 +1423,15 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbnz":
-                inverted = op_is_gt_ge
+                is_unsigned = "unsigned" in str(e.a).lower()
+                inverted = (not op_is_gt_ge) if is_unsigned else op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbz":
-                inverted = not op_is_gt_ge
+                is_unsigned = "unsigned" in str(e.a).lower()
+                inverted = op_is_gt_ge if is_unsigned else (not op_is_gt_ge)
                 if new_state.adds:
                     inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
