@@ -270,6 +270,10 @@ class SAST:
 
         return self._is_var
 
+    def get_const_val(self) -> bool:
+        assert self.is_const()
+        return self._bool_const_val
+
     def get_topmost_bool_expr(self) -> list[BoolExpression]:
         if isinstance(self, BoolExpression):
             return [self]
@@ -476,6 +480,12 @@ class BoolExpression(SAST):
     def is_const(self):
         # First, run base logic
         if super().is_const():
+            # Fixup own value
+            if self.op == self.OP_NOT:
+                if self.a.is_const():
+                    self._bool_const_val = not self.a._bool_const_val
+                    self._is_const = True
+                    return True
             return True
 
         # Then do short circuit for constants

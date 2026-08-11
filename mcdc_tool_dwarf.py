@@ -1222,6 +1222,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 TRACE_MATCH(
                     f"Handling int const '{operand.value}' for reg {state.target_reg} at {instructions[state.instr_idx].address:x}"
                 )
+                # Nothing good will come from the first Int constant in complex expr
+                if isinstance(operand.parent, NonBoolExpression) and len(
+                        operand.parent.operands) > 1 and operand == operand.parent.operands[0]:
+                    return ff_to_cond_instr(state)
                 return handle_int_const(operand.value, state)
             case EnumConst():
                 TRACE_MATCH(
@@ -1293,7 +1297,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         else:
             new_state = state
 
-        if not isinstance(e.a, BoolExpression):
+        if not isinstance(e.a, BoolExpression) and not e.a.is_const():
             new_state = ff_to_cond_instr(new_state)
 
             match instructions[new_state.instr_idx].mnemonic:
@@ -1316,13 +1320,14 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 case mnemonic:
                     TRACE_MATCH(f"Skipping {mnemonic} at {instructions[new_state.instr_idx].address:x}")
 
-        if isinstance(e.b, IntLiteral):
-            TRACE_MATCH("Ignoring const value as part of AND/OR expression")
-            return new_state
+        if e.a.is_const():
+            TRACE_MATCH("Skipping const argument A")
+            TRACE_MATCH(f"{e.a=} {e.a.is_const()=} {e.a.get_const_val()=}")
+            assert (e.a.get_const_val() == True and e.op == BoolExpression.OP_AND) or \
+                (e.a.get_const_val() == False and e.op == BoolExpression.OP_OR)
 
-        if isinstance(e.b, BoolExpression) and e.b.op == BoolExpression.OP_NOT and isinstance(
-                e.b.a, IntLiteral):
-            TRACE_MATCH("Ignoring NOT(const value) as part of AND/OR expression")
+        if e.b.is_const():
+            TRACE_MATCH("Ignoring const value as part of AND/OR expression")
             return new_state
 
         op_b_is_implicit_cast = isinstance(
