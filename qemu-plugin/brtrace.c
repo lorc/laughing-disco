@@ -165,6 +165,53 @@ static void read_register(struct qemu_plugin_register *reg, void *dest,
     }
 }
 
+/*
+ * Exit target stored for an evaluation that was not committed by a branch
+ * leaving the condition, so that no exit address is known for it.
+ */
+#define EXIT_TARGET_UNKNOWN 0
+
+/*
+ * Moves one finished condition evaluation into the permanent trace
+ */
+static void commit_condition(CpuTrace *cpu_trace, const char *uuid,
+                             GArray *buffer, uint64_t exit_target)
+{
+    CondBranchHeader header = {
+        .num_records = buffer->len,
+        .exit_target = exit_target
+    };
+    GByteArray *tmp_key;
+    GBytes *branch_key;
+    uint64_t *hit_count;
+
+    if (buffer->len == 0) {
+        return;
+    }
+
+    memcpy(header.uuid, uuid, UUID_SIZE);
+
+    tmp_key = g_byte_array_new();
+
+    g_byte_array_append(tmp_key, (const guint8 *)&header,
+                        sizeof(CondBranchHeader));
+    g_byte_array_append(tmp_key, (const guint8 *)buffer->data,
+                        buffer->len * sizeof(PendingCondEntry));
+
+    branch_key = g_byte_array_free_to_bytes(tmp_key);
+
+    hit_count = g_hash_table_lookup(cpu_trace->executed_conditions, branch_key);
+    if (hit_count) {
+        (*hit_count)++;
+        g_bytes_unref(branch_key);
+    } else {
+        hit_count = g_new(uint64_t, 1);
+        *hit_count = 1;
+        g_hash_table_insert(cpu_trace->executed_conditions, branch_key,
+                            hit_count);
+    }
+}
+
 static void vcpu_exec_cb(unsigned int vcpu_index, void *data)
 {
     uint32_t cpsr_bits;
@@ -237,7 +284,7 @@ static void vcpu_exec_cb(unsigned int vcpu_index, void *data)
         buffer = g_array_new(FALSE, FALSE, sizeof(PendingCondEntry));
         g_hash_table_insert(cpu_trace->running_conditions, insert_bytes, buffer);
     } else if (cbdata->insn_vaddr == cbdata->cond_start) {
-        /* Clear temp record if hit condition start with same frame pointer */
+        commit_condition(cpu_trace, cbdata->uuid, buffer, EXIT_TARGET_UNKNOWN);
         g_array_set_size(buffer, 0);
     }
 
@@ -253,38 +300,10 @@ static void vcpu_exec_cb(unsigned int vcpu_index, void *data)
 
     /* On exit of condition evaluation, record it to permanent trace buffer */
     if (taken_exit || fallthrough_exit) {
-        GBytes *branch_key;
-        GByteArray *tmp_key;
-        uint64_t *hit_count;
         uint64_t actual_exit = taken_exit ? cbdata->target_addr :
                                             (cbdata->insn_vaddr + 4);
 
-        CondBranchHeader header = {
-            .num_records = buffer->len,
-            .exit_target = actual_exit
-        };
-        memcpy(header.uuid, cbdata->uuid, UUID_SIZE);
-
-        tmp_key = g_byte_array_new();
-
-        g_byte_array_append(tmp_key, (const guint8 *)&header,
-                            sizeof(CondBranchHeader));
-        g_byte_array_append(tmp_key, (const guint8 *)buffer->data,
-                            buffer->len * sizeof(PendingCondEntry));
-
-        branch_key = g_byte_array_free_to_bytes(tmp_key);
-
-        hit_count = g_hash_table_lookup(cpu_trace->executed_conditions,
-                                        branch_key);
-        if (hit_count) {
-            (*hit_count)++;
-            g_bytes_unref(branch_key);
-        } else {
-            hit_count = g_new(uint64_t, 1);
-            *hit_count = 1;
-            g_hash_table_insert(cpu_trace->executed_conditions, branch_key,
-                                hit_count);
-        }
+        commit_condition(cpu_trace, cbdata->uuid, buffer, actual_exit);
 
         g_hash_table_remove(cpu_trace->running_conditions, lookup_bytes);
     }
@@ -486,6 +505,16 @@ static void plugin_exit_cb(qemu_plugin_id_t id, void *userdata)
 
         if (!cpu_trace || !cpu_trace->executed_conditions) {
             continue;
+        }
+
+        g_hash_table_iter_init(&iter, cpu_trace->running_conditions);
+
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
+            const PendingCondKey *pending = g_bytes_get_data((GBytes *)key,
+                                                             NULL);
+
+            commit_condition(cpu_trace, pending->uuid, (GArray *)value,
+                             EXIT_TARGET_UNKNOWN);
         }
 
         g_hash_table_iter_init(&iter, cpu_trace->executed_conditions);
