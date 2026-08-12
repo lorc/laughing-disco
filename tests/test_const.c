@@ -63,6 +63,9 @@ void test_half_const_expressions(void)
 	int x = 0;
 	int y = 5;
 
+	if (1 && x)
+		return;
+
 	if (0 && y < x)
 		return;
 
@@ -84,7 +87,8 @@ int main(int argc, char *argv[])
 
 	test_simple_const();
 	test_const_expressions();
+	test_half_const_expressions();
 
-        return 0;
+	return 0;
 }
 
