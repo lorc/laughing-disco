@@ -173,30 +173,38 @@ def _evaluate_test_vectors(
         eval_mask = 0
         expr.reset_value()
 
-        for addr, raw_flag in var['nodes']:
-            if addr not in addr_map:
-                continue
+        try:
+            for addr, raw_flag in var['nodes']:
+                if addr not in addr_map:
+                    continue
 
-            leaf_idx, tp = addr_map[addr]
+                leaf_idx, tp = addr_map[addr]
 
-            logic_value = (
-                not bool(raw_flag) if tp.inverted else bool(raw_flag)
-            )
+                logic_value = (
+                    not bool(raw_flag) if tp.inverted else bool(raw_flag)
+                )
 
-            eval_mask |= (1 << leaf_idx)
-            if logic_value:
-                val_mask |= (1 << leaf_idx)
+                eval_mask |= (1 << leaf_idx)
+                if logic_value:
+                    val_mask |= (1 << leaf_idx)
 
-            leaf = leafs[leaf_idx]
-            leaf.set_value(logic_value)
+                leaf = leafs[leaf_idx]
+                leaf.set_value(logic_value)
+        except (AssertionError, IndexError):
+            log.warning(f"  [!] Discarding a record for '{expr.loc}' that does not "
+                        f"fit the expression")
+            continue
 
         if eval_mask == 0:
             continue
 
-        overall_outcome = 1 if expr.get_value() else 0
+        outcome = expr.get_value()
+        if outcome is None:
+            log.warning(f"  [!] Discarding a record for '{expr.loc}' with no outcome")
+            continue
 
         unique_test_vectors[path_signature] = TestVector(
-            outcome=overall_outcome,
+            outcome=1 if outcome else 0,
             val_mask=val_mask,
             eval_mask=eval_mask,
             exit_target=var['exit_target'],
