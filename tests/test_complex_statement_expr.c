@@ -37,6 +37,16 @@ static inline __attribute__((__always_inline__)) int inline_func(int x)
 	})
 
 
+int global_var1 = 16;
+int global_var2 = 32;
+
+#define complex_macro_with_bool_expr3(p)				\
+	({													\
+		char __p = (p);									\
+		(__p >= global_var1) && (__p < global_var2); 	\
+	})
+
+
 int test_func()
 {
 	int z = 0;
@@ -64,12 +74,25 @@ int test_func2(unsigned int nr, unsigned int var)
 	return 1;
 }
 
+int test_func3()
+{
+	int a = 23;
+	int b = 35;
+
+	if (complex_macro_with_bool_expr3(a) && complex_macro_with_bool_expr3(b))
+		return 1;
+
+	return 0;
+}
+
 int main(void)
 {
 	test_func();
 
 	test_func2(1, 0x2);
 	test_func2(64, 0x0);
+
+	test_func3();
 
 	return 0;
 }

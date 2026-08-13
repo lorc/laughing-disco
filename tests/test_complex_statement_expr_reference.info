@@ -28,18 +28,34 @@ BRDA:17,0,0,-
 BRDA:17,0,1,-
 MCDC:17,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 7>)
 MCDC:17,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 7>)
-BRDA:44,0,0,1
-BRDA:44,0,1,0
-MCDC:44,0,t,0,0,(<MemberExpr <NonBoolVar (union (unnamed at tests/test_complex_statement_expr.c:44:6))x_>.val> EQ <IntLiteral 8>)
-MCDC:44,0,f,0,0,(<MemberExpr <NonBoolVar (union (unnamed at tests/test_complex_statement_expr.c:44:6))x_>.val> EQ <IntLiteral 8>)
-BRDA:61,0,0,1
-BRDA:61,0,1,1
-BRDA:61,0,2,0
-BRDA:61,0,3,1
-MCDC:61,0,t,1,0,(<NonBoolVar (unsigned int)nr> GE <IntLiteral 32>)
-MCDC:61,0,f,1,0,(<NonBoolVar (unsigned int)nr> GE <IntLiteral 32>)
-MCDC:61,0,t,0,1,!((<fcall> <NonBoolVar (bool (unsigned int  unsigned int))test>)(<FCallArg at <(Spl)tests/test_complex_statement_expr.c:61:28>>  <FCallArg at <(Exp)tests/test_complex_statement_expr.c:61:19>>))
-MCDC:61,0,f,0,1,!((<fcall> <NonBoolVar (bool (unsigned int  unsigned int))test>)(<FCallArg at <(Spl)tests/test_complex_statement_expr.c:61:28>>  <FCallArg at <(Exp)tests/test_complex_statement_expr.c:61:19>>))
+BRDA:54,0,0,1
+BRDA:54,0,1,0
+MCDC:54,0,t,0,0,(<MemberExpr <NonBoolVar (union (unnamed at tests/test_complex_statement_expr.c:54:6))x_>.val> EQ <IntLiteral 8>)
+MCDC:54,0,f,0,0,(<MemberExpr <NonBoolVar (union (unnamed at tests/test_complex_statement_expr.c:54:6))x_>.val> EQ <IntLiteral 8>)
+BRDA:71,0,0,1
+BRDA:71,0,1,1
+BRDA:71,0,2,0
+BRDA:71,0,3,1
+MCDC:71,0,t,1,0,(<NonBoolVar (unsigned int)nr> GE <IntLiteral 32>)
+MCDC:71,0,f,1,0,(<NonBoolVar (unsigned int)nr> GE <IntLiteral 32>)
+MCDC:71,0,t,0,1,!((<fcall> <NonBoolVar (bool (unsigned int  unsigned int))test>)(<FCallArg at <(Spl)tests/test_complex_statement_expr.c:71:28>>  <FCallArg at <(Exp)tests/test_complex_statement_expr.c:71:19>>))
+MCDC:71,0,f,0,1,!((<fcall> <NonBoolVar (bool (unsigned int  unsigned int))test>)(<FCallArg at <(Spl)tests/test_complex_statement_expr.c:71:28>>  <FCallArg at <(Exp)tests/test_complex_statement_expr.c:71:19>>))
+BRDA:82,0,0,1
+BRDA:82,0,1,0
+BRDA:82,0,2,1
+BRDA:82,0,3,0
+BRDA:82,0,4,1
+BRDA:82,0,5,0
+BRDA:82,0,6,0
+BRDA:82,0,7,1
+MCDC:82,0,t,0,0,(<NonBoolVar (char)__p> GE <NonBoolVar (int)global_var1>)
+MCDC:82,0,f,0,0,(<NonBoolVar (char)__p> GE <NonBoolVar (int)global_var1>)
+MCDC:82,0,t,0,1,(<NonBoolVar (char)__p> LT <NonBoolVar (int)global_var2>)
+MCDC:82,0,f,0,1,(<NonBoolVar (char)__p> LT <NonBoolVar (int)global_var2>)
+MCDC:82,0,t,0,2,(<NonBoolVar (char)__p> GE <NonBoolVar (int)global_var1>)
+MCDC:82,0,f,0,2,(<NonBoolVar (char)__p> GE <NonBoolVar (int)global_var1>)
+MCDC:82,0,t,0,3,(<NonBoolVar (char)__p> LT <NonBoolVar (int)global_var2>)
+MCDC:82,0,f,0,3,(<NonBoolVar (char)__p> LT <NonBoolVar (int)global_var2>)
 DA:5,1
 DA:7,1
 DA:9,1
@@ -47,10 +63,11 @@ DA:11,1
 DA:13,0
 DA:15,0
 DA:17,0
-DA:44,1
-DA:61,2
-BRF:20
-BRH:8
-LF:9
-LH:6
+DA:54,1
+DA:71,2
+DA:82,1
+BRF:28
+BRH:12
+LF:10
+LH:7
 end_of_record
