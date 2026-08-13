@@ -438,6 +438,99 @@ def _get_inlines_to_skip(expr: ExprAddressData, inlines: list[DwarfInlinedFunc],
 
 faillog = open("dwarf_parser_failures.log", "wt")
 
+# The line DWARF gives to code that belongs to no source line of its own
+COMPILER_GENERATED = 0
+
+# How far past the read back the branch consuming it is allowed to sit
+MERGE_BLOCK_LEN = 8
+
+
+def _stack_slot(instr: capstone.CsInsn) -> Optional[tuple[int, int]]:
+    """The (base register, offset) a load or a store addresses, if it has one"""
+    if not instr.operands:
+        return None
+
+    operand = instr.operands[-1]
+    if operand.type != capstone.arm64_const.ARM64_OP_MEM:
+        return None
+
+    return (operand.value.mem.base, operand.value.mem.disp)
+
+
+def _is_move_or_mask(instr: capstone.CsInsn) -> bool:
+    """
+    True for a move, a jump between blocks, and a mask against an immediate.
+    """
+    if instr.mnemonic in ("mov", "b"):
+        return True
+
+    if instr.mnemonic.startswith(("str", "stur", "ldr", "ldur")):
+        return True
+
+    if instr.mnemonic in ("and", "ands"):
+        return instr.operands[-1].type == capstone.arm64_const.ARM64_OP_IMM
+
+    return False
+
+
+def _merge_block_end(instructions: list[capstone.CsInsn], start: int) -> Optional[int]:
+    for idx in range(start + 1, min(start + MERGE_BLOCK_LEN, len(instructions))):
+        instr = instructions[idx]
+
+        if instr.mnemonic in ("cbz", "cbnz", "tbz", "tbnz"):
+            tail = idx + 1
+            if tail < len(instructions) and instructions[tail].mnemonic == "b" and \
+               instructions[tail].operands[0].imm == instructions[tail].address + 4:
+                return tail
+            return idx
+
+        if not _is_move_or_mask(instr):
+            return None
+
+    return None
+
+
+def _drop_merge_blocks(instructions: list[capstone.CsInsn], generated: set[int],
+                       inline_bounds: set[int]) -> list[capstone.CsInsn]:
+    written: set[tuple[int, int]] = set()
+    drop: set[int] = set()
+
+    for idx, instr in enumerate(instructions):
+        slot = _stack_slot(instr)
+        if not slot:
+            continue
+
+        if instr.mnemonic.startswith(("str", "stur")):
+            written.add(slot)
+            continue
+
+        if not instr.mnemonic.startswith(("ldr", "ldur")):
+            continue
+
+        if slot not in written or instr.address not in generated:
+            continue
+
+        end = _merge_block_end(instructions, idx)
+        if end is None:
+            continue
+
+        block = range(idx, end + 1)
+
+        if any(instructions[i].address in inline_bounds for i in block):
+            TRACE_CU(f"Keeping merge block {instructions[idx].address:x}"
+                     f"-{instructions[end].address:x}, it holds an inline boundary")
+            continue
+
+        TRACE_CU(f"Dropping merge block {instructions[idx].address:x}"
+                 f"-{instructions[end].address:x}")
+        drop.update(block)
+
+    if not drop:
+        return instructions
+
+    return [insn for idx, insn in enumerate(instructions) if idx not in drop]
+
+
 def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
                s_file_locs: list[SFileLocMap]) -> list[TracePoint]:
     global LAST_SEEN_VAR
@@ -445,8 +538,15 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
     cu_name: str = cu.get_top_DIE().attributes['DW_AT_name'].value.decode()
     TRACE_CU(f"Handling compile unit {cu_name}")
     dwarf_locs = parse_locs(cu, s_file_locs)
+    generated = {
+        loc.lp_state.address for loc in dwarf_locs
+        if loc.lp_state.line == COMPILER_GENERATED
+    }
     ret: list[TracePoint] = []
     inlines = _collect_inlines(cu)
+    inline_bounds = {
+        addr for inline in inlines for addr in (inline.low_addr, inline.high_addr)
+    }
     TRACE_CU("Inlines:")
     TRACE_CU(pformat(inlines))
     for next_expr in _get_next_expr_for_processing(dwarf_locs, expressions, inlines):
@@ -479,6 +579,7 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
             instructions = [
                 insn for insn in instructions if not _addr_inside_inlines(skip_inlines, insn.address)
             ]
+            instructions = _drop_merge_blocks(instructions, generated, inline_bounds)
             ret.append(match_bool_expr(cu, elffile, next_expr.expr, instructions, inlines))
         except TypeError:
             raise
