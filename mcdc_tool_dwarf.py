@@ -1357,7 +1357,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
                     new_state.instr_idx += 2
                 case mnemonic:
-                    TRACE_MATCH(f"Skipping {mnemonic} at {instructions[new_state.instr_idx].address:x}")
+                    raise MatchError(
+                    f"Expected tb(n)z, cb(n)z, but found {instructions[new_state.instr_idx].mnemonic}"
+                    )
 
         if e.a.is_const():
             TRACE_MATCH("Skipping const argument A")
