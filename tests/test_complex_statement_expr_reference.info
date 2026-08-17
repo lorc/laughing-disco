@@ -1,0 +1,47 @@
+TN:MCDC_Test_Report
+SF:tests/test_complex_statement_expr.c
+BRDA:5,0,0,0
+BRDA:5,0,1,1
+MCDC:5,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+MCDC:5,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+BRDA:7,0,0,0
+BRDA:7,0,1,1
+MCDC:7,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 2>)
+MCDC:7,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 2>)
+BRDA:9,0,0,0
+BRDA:9,0,1,1
+MCDC:9,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+MCDC:9,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+BRDA:11,0,0,1
+BRDA:11,0,1,0
+MCDC:11,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 4>)
+MCDC:11,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 4>)
+BRDA:13,0,0,-
+BRDA:13,0,1,-
+MCDC:13,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 5>)
+MCDC:13,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 5>)
+BRDA:15,0,0,-
+BRDA:15,0,1,-
+MCDC:15,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 6>)
+MCDC:15,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 6>)
+BRDA:17,0,0,-
+BRDA:17,0,1,-
+MCDC:17,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 7>)
+MCDC:17,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 7>)
+BRDA:44,0,0,1
+BRDA:44,0,1,0
+MCDC:44,0,t,0,0,(<MemberExpr <NonBoolVar (union (unnamed at tests/test_complex_statement_expr.c:44:6))x_>.val> EQ <IntLiteral 8>)
+MCDC:44,0,f,0,0,(<MemberExpr <NonBoolVar (union (unnamed at tests/test_complex_statement_expr.c:44:6))x_>.val> EQ <IntLiteral 8>)
+DA:5,1
+DA:7,1
+DA:9,1
+DA:11,1
+DA:13,0
+DA:15,0
+DA:17,0
+DA:44,1
+BRF:16
+BRH:5
+LF:8
+LH:5
+end_of_record

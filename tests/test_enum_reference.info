@@ -1,0 +1,22 @@
+TN:MCDC_Test_Report
+SF:tests/test_enum.c
+BRDA:17,0,0,0
+BRDA:17,0,1,1
+MCDC:17,0,t,0,0,(<NonBoolVar (enum test_enum)var> GT <EnumConst None>)
+MCDC:17,0,f,0,0,(<NonBoolVar (enum test_enum)var> GT <EnumConst None>)
+BRDA:19,0,0,0
+BRDA:19,0,1,1
+MCDC:19,0,t,0,0,(<NonBoolVar (enum test_enum)var> EQ <EnumConst None>)
+MCDC:19,0,f,0,0,(<NonBoolVar (enum test_enum)var> EQ <EnumConst None>)
+BRDA:22,0,0,0
+BRDA:22,0,1,1
+MCDC:22,0,t,0,0,(<NonBoolVar (enum test_enum)var> GE <EnumConst None>)
+MCDC:22,0,f,0,0,(<NonBoolVar (enum test_enum)var> GE <EnumConst None>)
+DA:17,1
+DA:19,1
+DA:22,1
+BRF:6
+BRH:3
+LF:3
+LH:3
+end_of_record

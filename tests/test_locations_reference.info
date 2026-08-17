@@ -1,0 +1,66 @@
+TN:MCDC_Test_Report
+SF:tests/test_locations.c
+BRDA:27,0,0,-
+BRDA:27,0,1,-
+MCDC:27,0,t,0,0,<NonBoolVar (int)a>
+MCDC:27,0,f,0,0,<NonBoolVar (int)a>
+BRDA:39,0,0,0
+BRDA:39,0,1,1
+BRDA:39,0,2,0
+BRDA:39,0,3,1
+BRDA:39,0,4,0
+BRDA:39,0,5,1
+BRDA:39,0,6,0
+BRDA:39,0,7,1
+BRDA:39,0,8,0
+BRDA:39,0,9,1
+MCDC:39,0,t,0,0,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->path>
+MCDC:39,0,f,0,0,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->path>
+MCDC:39,0,t,0,1,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->type>
+MCDC:39,0,f,0,1,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->type>
+MCDC:39,0,t,0,2,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->compatible>
+MCDC:39,0,f,0,2,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->compatible>
+MCDC:39,0,t,0,3,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->not_available>
+MCDC:39,0,f,0,3,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->not_available>
+MCDC:39,0,t,0,4,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->prop>
+MCDC:39,0,f,0,4,<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->prop>
+BRDA:42,0,0,-
+BRDA:42,0,1,-
+MCDC:42,0,t,0,0,(<NonBoolVar (int)x> GT <IntLiteral 3>)
+MCDC:42,0,f,0,0,(<NonBoolVar (int)x> GT <IntLiteral 3>)
+BRDA:46,0,0,1
+BRDA:46,0,1,0
+BRDA:46,0,2,1
+BRDA:46,0,3,0
+MCDC:46,0,t,0,0,(<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->data> EQ <IntLiteral 0>)
+MCDC:46,0,f,0,0,(<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->data> EQ <IntLiteral 0>)
+MCDC:46,0,t,0,1,(<NonBoolVar (int)x> EQ <IntLiteral 0>)
+MCDC:46,0,f,0,1,(<NonBoolVar (int)x> EQ <IntLiteral 0>)
+BRDA:49,0,0,-
+BRDA:49,0,1,-
+MCDC:49,0,t,0,0,(<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->data> EQ <IntLiteral 0>)
+MCDC:49,0,f,0,0,(<MemberExpr <NonBoolVar (const struct dt_device_match *)matches>->data> EQ <IntLiteral 0>)
+BRDA:52,0,0,-
+BRDA:52,0,1,-
+MCDC:52,0,t,0,0,(<NonBoolVar (volatile int)b> LT <NonBoolVar (volatile int)c>)
+MCDC:52,0,f,0,0,(<NonBoolVar (volatile int)b> LT <NonBoolVar (volatile int)c>)
+BRDA:54,0,0,-
+BRDA:54,0,1,-
+MCDC:54,0,t,0,0,(<MemberExpr <NonBoolVar (struct dt_device_match)g_matches>.num> EQ <IntLiteral 2>)
+MCDC:54,0,f,0,0,(<MemberExpr <NonBoolVar (struct dt_device_match)g_matches>.num> EQ <IntLiteral 2>)
+BRDA:54,0,2,-
+BRDA:54,0,3,-
+MCDC:54,1,t,0,0,(<MemberExpr <NonBoolVar (struct dt_device_match)g_matches>.num> GE <IntLiteral 1>)
+MCDC:54,1,f,0,0,(<MemberExpr <NonBoolVar (struct dt_device_match)g_matches>.num> GE <IntLiteral 1>)
+DA:27,0
+DA:39,1
+DA:42,0
+DA:46,1
+DA:49,0
+DA:52,0
+DA:54,0
+BRF:26
+BRH:7
+LF:7
+LH:2
+end_of_record

@@ -1,0 +1,12 @@
+TN:MCDC_Test_Report
+SF:tests/qual/parsing-001.c
+BRDA:7,0,0,1
+BRDA:7,0,1,1
+MCDC:7,0,t,1,0,(<NonBoolVar (int)global_var> EQ <IntLiteral 2>)
+MCDC:7,0,f,1,0,(<NonBoolVar (int)global_var> EQ <IntLiteral 2>)
+DA:7,2
+BRF:2
+BRH:2
+LF:1
+LH:1
+end_of_record

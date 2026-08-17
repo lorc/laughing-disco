@@ -1,0 +1,27 @@
+TN:MCDC_Test_Report
+SF:tests/test_bitfields.c
+BRDA:21,0,0,1
+BRDA:21,0,1,1
+MCDC:21,0,t,1,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> EQ <IntLiteral 0>)
+MCDC:21,0,f,1,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> EQ <IntLiteral 0>)
+BRDA:24,0,0,1
+BRDA:24,0,1,0
+MCDC:24,0,t,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> XOR <IntLiteral 0>)
+MCDC:24,0,f,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> XOR <IntLiteral 0>)
+BRDA:27,0,0,-
+BRDA:27,0,1,-
+MCDC:27,0,t,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> EQ <IntLiteral 1>)
+MCDC:27,0,f,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> EQ <IntLiteral 1>)
+BRDA:30,0,0,-
+BRDA:30,0,1,-
+MCDC:30,0,t,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> XOR <IntLiteral 1>)
+MCDC:30,0,f,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> XOR <IntLiteral 1>)
+DA:21,2
+DA:24,1
+DA:27,0
+DA:30,0
+BRF:8
+BRH:3
+LF:4
+LH:2
+end_of_record

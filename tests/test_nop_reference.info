@@ -1,0 +1,12 @@
+TN:MCDC_Test_Report
+SF:tests/test_nop.c
+BRDA:27,0,0,1
+BRDA:27,0,1,0
+MCDC:27,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+MCDC:27,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+DA:27,1
+BRF:2
+BRH:1
+LF:1
+LH:1
+end_of_record

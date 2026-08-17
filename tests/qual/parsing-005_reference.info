@@ -1,0 +1,26 @@
+TN:MCDC_Test_Report
+SF:tests/qual/parsing-005.c
+BRDA:11,0,0,1
+BRDA:11,0,1,0
+MCDC:11,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+MCDC:11,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+BRDA:21,0,0,0
+BRDA:21,0,1,1
+MCDC:21,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+MCDC:21,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+BRDA:31,0,0,0
+BRDA:31,0,1,1
+BRDA:31,0,2,0
+BRDA:31,0,3,0
+MCDC:31,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+MCDC:31,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+MCDC:31,0,t,0,1,(<NonBoolVar (int)x> EQ <IntLiteral 17>)
+MCDC:31,0,f,0,1,(<NonBoolVar (int)x> EQ <IntLiteral 17>)
+DA:11,1
+DA:21,1
+DA:31,1
+BRF:8
+BRH:3
+LF:3
+LH:3
+end_of_record

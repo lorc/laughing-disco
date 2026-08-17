@@ -1,0 +1,17 @@
+TN:MCDC_Test_Report
+SF:tests/test_builtins.c
+BRDA:11,0,0,1
+BRDA:11,0,1,0
+MCDC:11,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+MCDC:11,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+BRDA:14,0,0,-
+BRDA:14,0,1,-
+MCDC:14,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+MCDC:14,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 1>)
+DA:11,1
+DA:14,0
+BRF:4
+BRH:1
+LF:2
+LH:1
+end_of_record

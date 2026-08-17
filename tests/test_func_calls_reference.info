@@ -1,0 +1,63 @@
+TN:MCDC_Test_Report
+SF:tests/test_func_calls.c
+BRDA:5,0,0,6
+BRDA:5,0,1,6
+MCDC:5,0,t,1,0,(<BoolVar a> XOR <BoolVar b>)
+MCDC:5,0,f,1,0,(<BoolVar a> XOR <BoolVar b>)
+BRDA:10,0,0,1
+BRDA:10,0,1,2
+BRDA:10,0,2,1
+BRDA:10,0,3,1
+MCDC:10,0,t,1,0,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:10:22>>  <FCallArg at <(Auto)tests/test_func_calls.c:10:30>>)
+MCDC:10,0,f,1,0,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:10:22>>  <FCallArg at <(Auto)tests/test_func_calls.c:10:30>>)
+MCDC:10,0,t,1,1,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:10:49>>  <FCallArg at <(Auto)tests/test_func_calls.c:10:52>>)
+MCDC:10,0,f,1,1,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:10:49>>  <FCallArg at <(Auto)tests/test_func_calls.c:10:52>>)
+BRDA:10,0,4,2
+BRDA:10,0,5,1
+BRDA:10,0,6,1
+BRDA:10,0,7,1
+MCDC:10,1,t,1,0,<BoolVar a>
+MCDC:10,1,f,1,0,<BoolVar a>
+MCDC:10,1,t,1,1,<BoolVar b>
+MCDC:10,1,f,1,1,<BoolVar b>
+BRDA:10,0,8,1
+BRDA:10,0,9,2
+BRDA:10,0,10,0
+BRDA:10,0,11,1
+MCDC:10,2,t,0,0,<BoolVar b>
+MCDC:10,2,f,0,0,<BoolVar b>
+MCDC:10,2,t,0,1,<BoolVar c>
+MCDC:10,2,f,0,1,<BoolVar c>
+BRDA:17,0,0,2
+BRDA:17,0,1,1
+BRDA:17,0,2,1
+BRDA:17,0,3,1
+BRDA:17,0,4,0
+BRDA:17,0,5,1
+MCDC:17,0,t,0,0,<BoolVar a>
+MCDC:17,0,f,0,0,<BoolVar a>
+MCDC:17,0,t,0,1,<BoolVar b>
+MCDC:17,0,f,0,1,<BoolVar b>
+MCDC:17,0,t,0,2,<BoolVar c>
+MCDC:17,0,f,0,2,<BoolVar c>
+BRDA:17,0,6,1
+BRDA:17,0,7,2
+MCDC:17,1,t,1,0,(<BoolVar b> EQ <BoolVar c>)
+MCDC:17,1,f,1,0,(<BoolVar b> EQ <BoolVar c>)
+BRDA:24,0,0,2
+BRDA:24,0,1,1
+BRDA:24,0,2,1
+BRDA:24,0,3,0
+MCDC:24,0,t,0,0,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:24:26>>  <FCallArg at <(Auto)tests/test_func_calls.c:24:29>>)
+MCDC:24,0,f,0,0,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:24:26>>  <FCallArg at <(Auto)tests/test_func_calls.c:24:29>>)
+MCDC:24,0,t,0,1,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:24:43>>  <FCallArg at <(Auto)tests/test_func_calls.c:24:46>>)
+MCDC:24,0,f,0,1,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/test_func_calls.c:24:43>>  <FCallArg at <(Auto)tests/test_func_calls.c:24:46>>)
+DA:5,12
+DA:10,9
+DA:17,6
+DA:24,3
+BRF:26
+BRH:23
+LF:4
+LH:4
+end_of_record
