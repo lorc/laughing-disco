@@ -309,6 +309,9 @@ class SAST:
         return getattr(self, 'value', None)
 
     def reset_value(self) -> None:
+        if isinstance(self, (IntLiteral, StringLiteral, SizeOf)):
+            return
+
         self.value = None
         if getattr(self, 'inner', None):
             for child in self.inner:
