@@ -1,138 +1,225 @@
 TN:MCDC_Test_Report
 SF:tests/test_basics.c
-BRDA:95,0,0,3
-BRDA:95,0,1,1
-MCDC:95,1,t,1,0,(<NonBoolVar (int)i> LT <IntLiteral 3>)
-MCDC:95,1,f,1,0,(<NonBoolVar (int)i> LT <IntLiteral 3>)
-BRDA:59,0,0,1
-BRDA:59,0,1,2
-MCDC:59,1,t,1,0,<BoolVar a>
-MCDC:59,1,f,1,0,<BoolVar a>
-BRDA:60,0,0,2
-BRDA:60,0,1,0
-BRDA:60,0,2,1
-BRDA:60,0,3,1
-MCDC:60,2,t,0,0,<BoolVar a>
-MCDC:60,2,f,0,0,<BoolVar a>
-MCDC:60,2,t,1,1,<BoolVar b>
-MCDC:60,2,f,1,1,<BoolVar b>
-BRDA:8,0,0,1
-BRDA:8,0,1,0
-MCDC:8,1,t,0,0,(<NonBoolVar (int)global_var> EQ <IntLiteral 2>)
-MCDC:8,1,f,0,0,(<NonBoolVar (int)global_var> EQ <IntLiteral 2>)
-BRDA:15,0,0,1
-BRDA:15,0,1,2
-MCDC:15,1,t,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 1>)
-MCDC:15,1,f,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 1>)
-BRDA:18,0,0,1
-BRDA:18,0,1,1
-MCDC:18,1,t,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 2>)
-MCDC:18,1,f,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 2>)
-BRDA:32,0,0,1
-BRDA:32,0,1,0
-BRDA:32,0,2,0
-BRDA:32,0,3,0
-MCDC:32,2,t,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
-MCDC:32,2,f,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
-MCDC:32,2,t,0,1,(<NonBoolVar (int)a> GT <IntLiteral 18>)
-MCDC:32,2,f,0,1,(<NonBoolVar (int)a> GT <IntLiteral 18>)
-BRDA:40,0,0,1
-BRDA:40,0,1,2
-BRDA:40,0,2,1
-BRDA:40,0,3,0
-MCDC:40,2,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
-MCDC:40,2,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
-MCDC:40,2,t,0,1,(<NonBoolVar (int)b> GT <IntLiteral 8>)
-MCDC:40,2,f,0,1,(<NonBoolVar (int)b> GT <IntLiteral 8>)
-BRDA:61,0,0,1
-BRDA:61,0,1,0
-BRDA:61,0,2,1
-BRDA:61,0,3,0
-BRDA:61,0,4,0
-BRDA:61,0,5,1
-MCDC:61,3,t,0,0,<BoolVar a>
-MCDC:61,3,f,0,0,<BoolVar a>
-MCDC:61,3,t,0,1,<BoolVar b>
-MCDC:61,3,f,0,1,<BoolVar b>
-MCDC:61,3,t,0,2,<BoolVar c>
-MCDC:61,3,f,0,2,<BoolVar c>
+BRDA:10,0,0,1
+BRDA:10,0,1,0
+MCDC:10,0,t,0,0,(<NonBoolVar (int)global_var> EQ <IntLiteral 2>)
+MCDC:10,0,f,0,0,(<NonBoolVar (int)global_var> EQ <IntLiteral 2>)
+BRDA:17,0,0,1
+BRDA:17,0,1,2
+MCDC:17,0,t,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 1>)
+MCDC:17,0,f,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 1>)
+BRDA:20,0,0,1
+BRDA:20,0,1,1
+MCDC:20,0,t,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 2>)
+MCDC:20,0,f,1,0,(<NonBoolVar (int)a> EQ <IntLiteral 2>)
+BRDA:23,0,0,0
+BRDA:23,0,1,1
+MCDC:23,0,t,0,0,(<NonBoolVar (int)a> EQ <IntLiteral 3>)
+MCDC:23,0,f,0,0,(<NonBoolVar (int)a> EQ <IntLiteral 3>)
+BRDA:26,0,0,0
+BRDA:26,0,1,1
+MCDC:26,0,t,0,0,(<NonBoolVar (int)a> GT <IntLiteral 512>)
+MCDC:26,0,f,0,0,(<NonBoolVar (int)a> GT <IntLiteral 512>)
 BRDA:29,0,0,1
-BRDA:29,0,1,3
-BRDA:29,0,2,2
-BRDA:29,0,3,1
-MCDC:29,2,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
-MCDC:29,2,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
-MCDC:29,2,t,1,1,(<NonBoolVar (int)a> GT <IntLiteral 8>)
-MCDC:29,2,f,1,1,(<NonBoolVar (int)a> GT <IntLiteral 8>)
-BRDA:21,0,0,0
-BRDA:21,0,1,1
-MCDC:21,1,t,0,0,(<NonBoolVar (int)a> EQ <IntLiteral 3>)
-MCDC:21,1,f,0,0,(<NonBoolVar (int)a> EQ <IntLiteral 3>)
-BRDA:75,0,0,2
-BRDA:75,0,1,1
-BRDA:75,0,2,1
-BRDA:75,0,3,1
-BRDA:75,0,4,1
-BRDA:75,0,5,1
-BRDA:75,0,6,0
-BRDA:75,0,7,1
-MCDC:75,4,t,1,0,<BoolVar a>
-MCDC:75,4,f,1,0,<BoolVar a>
-MCDC:75,4,t,1,1,<BoolVar b>
-MCDC:75,4,f,1,1,<BoolVar b>
-MCDC:75,4,t,0,2,<BoolVar c>
-MCDC:75,4,f,0,2,<BoolVar c>
-MCDC:75,4,t,0,3,<BoolVar d>
-MCDC:75,4,f,0,3,<BoolVar d>
-BRDA:51,0,0,1
-BRDA:51,0,1,0
-BRDA:51,0,2,0
-BRDA:51,0,3,0
-MCDC:51,2,t,0,0,<BoolVar a>
-MCDC:51,2,f,0,0,<BoolVar a>
-MCDC:51,2,t,0,1,<BoolVar a>
-MCDC:51,2,f,0,1,<BoolVar a>
-BRDA:83,0,0,2
+BRDA:29,0,1,0
+MCDC:29,0,t,0,0,(<NonBoolVar (int)a> LT <IntLiteral 512>)
+MCDC:29,0,f,0,0,(<NonBoolVar (int)a> LT <IntLiteral 512>)
+BRDA:32,0,0,-
+BRDA:32,0,1,-
+MCDC:32,0,t,0,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+MCDC:32,0,f,0,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+BRDA:35,0,0,-
+BRDA:35,0,1,-
+MCDC:35,0,t,0,0,(<NonBoolVar (int)a> LT <IntLiteral 0>)
+MCDC:35,0,f,0,0,(<NonBoolVar (int)a> LT <IntLiteral 0>)
+BRDA:43,0,0,0
+BRDA:43,0,1,3
+MCDC:43,0,t,0,0,(<NonBoolVar (unsigned int)a> LT <IntLiteral 0>)
+MCDC:43,0,f,0,0,(<NonBoolVar (unsigned int)a> LT <IntLiteral 0>)
+BRDA:46,0,0,2
+BRDA:46,0,1,1
+MCDC:46,0,t,1,0,(<NonBoolVar (unsigned int)a> GT <IntLiteral 0>)
+MCDC:46,0,f,1,0,(<NonBoolVar (unsigned int)a> GT <IntLiteral 0>)
+BRDA:49,0,0,1
+BRDA:49,0,1,0
+MCDC:49,0,t,0,0,(<NonBoolVar (unsigned int)a> LT <IntLiteral 1>)
+MCDC:49,0,f,0,0,(<NonBoolVar (unsigned int)a> LT <IntLiteral 1>)
+BRDA:52,0,0,-
+BRDA:52,0,1,-
+MCDC:52,0,t,0,0,(<NonBoolVar (unsigned int)a> GT <IntLiteral 1>)
+MCDC:52,0,f,0,0,(<NonBoolVar (unsigned int)a> GT <IntLiteral 1>)
+BRDA:55,0,0,-
+BRDA:55,0,1,-
+MCDC:55,0,t,0,0,(<NonBoolVar (unsigned int)a> GT (<NonBoolExpr> (<NonBoolExpr> ~ <IntLiteral 0>) >> <IntLiteral 1>))
+MCDC:55,0,f,0,0,(<NonBoolVar (unsigned int)a> GT (<NonBoolExpr> (<NonBoolExpr> ~ <IntLiteral 0>) >> <IntLiteral 1>))
+BRDA:58,0,0,-
+BRDA:58,0,1,-
+MCDC:58,0,t,0,0,(<NonBoolVar (unsigned int)a> LT (<NonBoolExpr> (<NonBoolExpr> ~ <IntLiteral 0>) >> <IntLiteral 1>))
+MCDC:58,0,f,0,0,(<NonBoolVar (unsigned int)a> LT (<NonBoolExpr> (<NonBoolExpr> ~ <IntLiteral 0>) >> <IntLiteral 1>))
+BRDA:61,0,0,-
+BRDA:61,0,1,-
+MCDC:61,0,t,0,0,((<NonBoolExpr> <NonBoolVar (unsigned int)a> << <IntLiteral 3>) GE <NonBoolVar (unsigned int)b>)
+MCDC:61,0,f,0,0,((<NonBoolExpr> <NonBoolVar (unsigned int)a> << <IntLiteral 3>) GE <NonBoolVar (unsigned int)b>)
+BRDA:69,0,0,1
+BRDA:69,0,1,3
+BRDA:69,0,2,2
+BRDA:69,0,3,1
+MCDC:69,0,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
+MCDC:69,0,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
+MCDC:69,0,t,1,1,(<NonBoolVar (int)a> GT <IntLiteral 8>)
+MCDC:69,0,f,1,1,(<NonBoolVar (int)a> GT <IntLiteral 8>)
+BRDA:72,0,0,1
+BRDA:72,0,1,0
+BRDA:72,0,2,0
+BRDA:72,0,3,0
+MCDC:72,0,t,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
+MCDC:72,0,f,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
+MCDC:72,0,t,0,1,(<NonBoolVar (int)a> GT <IntLiteral 18>)
+MCDC:72,0,f,0,1,(<NonBoolVar (int)a> GT <IntLiteral 18>)
+BRDA:80,0,0,1
+BRDA:80,0,1,2
+BRDA:80,0,2,1
+BRDA:80,0,3,0
+MCDC:80,0,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
+MCDC:80,0,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 6>)
+MCDC:80,0,t,0,1,(<NonBoolVar (int)b> GT <IntLiteral 8>)
+MCDC:80,0,f,0,1,(<NonBoolVar (int)b> GT <IntLiteral 8>)
+BRDA:83,0,0,1
 BRDA:83,0,1,1
-BRDA:83,0,2,1
+BRDA:83,0,2,0
 BRDA:83,0,3,1
-BRDA:83,0,4,1
-BRDA:83,0,5,1
-BRDA:83,0,6,0
-BRDA:83,0,7,1
-MCDC:83,4,t,1,0,<BoolVar a>
-MCDC:83,4,f,1,0,<BoolVar a>
-MCDC:83,4,t,1,1,<BoolVar b>
-MCDC:83,4,f,1,1,<BoolVar b>
-MCDC:83,4,t,0,2,<BoolVar a>
-MCDC:83,4,f,0,2,<BoolVar a>
-MCDC:83,4,t,0,3,<BoolVar b>
-MCDC:83,4,f,0,3,<BoolVar b>
-BRDA:43,0,0,1
-BRDA:43,0,1,1
-BRDA:43,0,2,0
-BRDA:43,0,3,1
-MCDC:43,2,t,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
-MCDC:43,2,f,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
-MCDC:43,2,t,0,1,(<NonBoolVar (int)b> GT <IntLiteral 18>)
-MCDC:43,2,f,0,1,(<NonBoolVar (int)b> GT <IntLiteral 18>)
-DA:8,1
-DA:15,1
-DA:18,1
-DA:21,1
+MCDC:83,0,t,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
+MCDC:83,0,f,0,0,(<NonBoolVar (int)a> LT <IntLiteral 16>)
+MCDC:83,0,t,0,1,(<NonBoolVar (int)b> GT <IntLiteral 18>)
+MCDC:83,0,f,0,1,(<NonBoolVar (int)b> GT <IntLiteral 18>)
+BRDA:91,0,0,1
+BRDA:91,0,1,0
+BRDA:91,0,2,0
+BRDA:91,0,3,0
+MCDC:91,0,t,0,0,<BoolVar a>
+MCDC:91,0,f,0,0,<BoolVar a>
+MCDC:91,0,t,0,1,<BoolVar a>
+MCDC:91,0,f,0,1,<BoolVar a>
+BRDA:99,0,0,2
+BRDA:99,0,1,1
+MCDC:99,0,t,1,0,<BoolVar a>
+MCDC:99,0,f,1,0,<BoolVar a>
+BRDA:100,0,0,2
+BRDA:100,0,1,0
+BRDA:100,0,2,1
+BRDA:100,0,3,1
+MCDC:100,0,t,0,0,<BoolVar a>
+MCDC:100,0,f,0,0,<BoolVar a>
+MCDC:100,0,t,1,1,<BoolVar b>
+MCDC:100,0,f,1,1,<BoolVar b>
+BRDA:101,0,0,1
+BRDA:101,0,1,0
+BRDA:101,0,2,1
+BRDA:101,0,3,0
+BRDA:101,0,4,0
+BRDA:101,0,5,1
+MCDC:101,0,t,0,0,<BoolVar a>
+MCDC:101,0,f,0,0,<BoolVar a>
+MCDC:101,0,t,0,1,<BoolVar b>
+MCDC:101,0,f,0,1,<BoolVar b>
+MCDC:101,0,t,0,2,<BoolVar c>
+MCDC:101,0,f,0,2,<BoolVar c>
+BRDA:102,0,0,-
+BRDA:102,0,1,-
+BRDA:102,0,2,-
+BRDA:102,0,3,-
+BRDA:102,0,4,-
+BRDA:102,0,5,-
+BRDA:102,0,6,-
+BRDA:102,0,7,-
+MCDC:102,0,t,0,0,<BoolVar a>
+MCDC:102,0,f,0,0,<BoolVar a>
+MCDC:102,0,t,0,1,<BoolVar b>
+MCDC:102,0,f,0,1,<BoolVar b>
+MCDC:102,0,t,0,2,<BoolVar c>
+MCDC:102,0,f,0,2,<BoolVar c>
+MCDC:102,0,t,0,3,<BoolVar d>
+MCDC:102,0,f,0,3,<BoolVar d>
+BRDA:115,0,0,2
+BRDA:115,0,1,1
+BRDA:115,0,2,1
+BRDA:115,0,3,1
+BRDA:115,0,4,1
+BRDA:115,0,5,1
+BRDA:115,0,6,0
+BRDA:115,0,7,1
+MCDC:115,0,t,1,0,<BoolVar a>
+MCDC:115,0,f,1,0,<BoolVar a>
+MCDC:115,0,t,1,1,!(<BoolVar b>)
+MCDC:115,0,f,1,1,!(<BoolVar b>)
+MCDC:115,0,t,0,2,<BoolVar c>
+MCDC:115,0,f,0,2,<BoolVar c>
+MCDC:115,0,t,0,3,<BoolVar d>
+MCDC:115,0,f,0,3,<BoolVar d>
+BRDA:123,0,0,2
+BRDA:123,0,1,1
+BRDA:123,0,2,1
+BRDA:123,0,3,1
+BRDA:123,0,4,1
+BRDA:123,0,5,1
+BRDA:123,0,6,0
+BRDA:123,0,7,1
+MCDC:123,0,t,1,0,<BoolVar a>
+MCDC:123,0,f,1,0,<BoolVar a>
+MCDC:123,0,t,1,1,!(<BoolVar b>)
+MCDC:123,0,f,1,1,!(<BoolVar b>)
+MCDC:123,0,t,0,2,!(<BoolVar a>)
+MCDC:123,0,f,0,2,!(<BoolVar a>)
+MCDC:123,0,t,0,3,<BoolVar b>
+MCDC:123,0,f,0,3,<BoolVar b>
+BRDA:135,0,0,3
+BRDA:135,0,1,1
+MCDC:135,0,t,1,0,(<NonBoolVar (int)i> LT <IntLiteral 3>)
+MCDC:135,0,f,1,0,(<NonBoolVar (int)i> LT <IntLiteral 3>)
+BRDA:147,0,0,1
+BRDA:147,0,1,0
+MCDC:147,0,t,0,0,(<NonBoolVar (void *)ptr> XOR <IntLiteral 0>)
+MCDC:147,0,f,0,0,(<NonBoolVar (void *)ptr> XOR <IntLiteral 0>)
+BRDA:158,0,0,1
+BRDA:158,0,1,0
+MCDC:158,0,t,0,0,(<NonBoolVar (u64)x> GT sizeof(u64))
+MCDC:158,0,f,0,0,(<NonBoolVar (u64)x> GT sizeof(u64))
+BRDA:161,0,0,-
+BRDA:161,0,1,-
+MCDC:161,0,t,0,0,(<NonBoolVar (u64)x> GT sizeof(char[64]))
+MCDC:161,0,f,0,0,(<NonBoolVar (u64)x> GT sizeof(char[64]))
+DA:10,1
+DA:17,3
+DA:20,2
+DA:23,1
+DA:26,1
 DA:29,1
-DA:32,1
-DA:40,1
-DA:43,1
-DA:51,1
-DA:59,1
-DA:60,1
-DA:61,1
-DA:75,1
-DA:83,1
-DA:95,1
-BRF:58
-BRH:42
-LF:15
-LH:15
+DA:32,0
+DA:35,0
+DA:43,3
+DA:46,3
+DA:49,1
+DA:52,0
+DA:55,0
+DA:58,0
+DA:61,0
+DA:69,4
+DA:72,1
+DA:80,3
+DA:83,2
+DA:91,1
+DA:99,3
+DA:100,2
+DA:101,1
+DA:102,0
+DA:115,3
+DA:123,3
+DA:135,4
+DA:147,1
+DA:158,1
+DA:161,0
+BRF:94
+BRH:50
+LF:30
+LH:22
 end_of_record

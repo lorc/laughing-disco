@@ -1,0 +1,21 @@
+TN:MCDC_Test_Report
+SF:tests/qual/parsing-011.c
+BRDA:5,0,0,3
+BRDA:5,0,1,1
+MCDC:5,0,t,1,0,(<BoolVar a> XOR <BoolVar b>)
+MCDC:5,0,f,1,0,(<BoolVar a> XOR <BoolVar b>)
+BRDA:10,0,0,2
+BRDA:10,0,1,1
+BRDA:10,0,2,1
+BRDA:10,0,3,0
+MCDC:10,0,t,0,0,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/qual/parsing-011.c:10:26>>  <FCallArg at <(Auto)tests/qual/parsing-011.c:10:29>>)
+MCDC:10,0,f,0,0,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/qual/parsing-011.c:10:26>>  <FCallArg at <(Auto)tests/qual/parsing-011.c:10:29>>)
+MCDC:10,0,t,0,1,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/qual/parsing-011.c:10:43>>  <FCallArg at <(Auto)tests/qual/parsing-011.c:10:46>>)
+MCDC:10,0,f,0,1,(<fcall> <NonBoolVar (bool (bool  bool))get_xor>)(<FCallArg at <(Auto)tests/qual/parsing-011.c:10:43>>  <FCallArg at <(Auto)tests/qual/parsing-011.c:10:46>>)
+DA:5,4
+DA:10,3
+BRF:6
+BRH:5
+LF:2
+LH:2
+end_of_record

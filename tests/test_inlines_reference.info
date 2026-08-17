@@ -1,0 +1,68 @@
+TN:MCDC_Test_Report
+SF:tests/test_inlines.c
+BRDA:7,0,0,0
+BRDA:7,0,1,1
+MCDC:7,0,t,0,0,(<BoolVar a> XOR <BoolVar b>)
+MCDC:7,0,f,0,0,(<BoolVar a> XOR <BoolVar b>)
+BRDA:9,0,0,1
+BRDA:9,0,1,0
+BRDA:9,0,2,0
+BRDA:9,0,3,0
+MCDC:9,0,t,0,0,<BoolVar a>
+MCDC:9,0,f,0,0,<BoolVar a>
+MCDC:9,0,t,0,1,<BoolVar b>
+MCDC:9,0,f,0,1,<BoolVar b>
+BRDA:16,0,0,-
+BRDA:16,0,1,-
+MCDC:16,0,t,0,0,<NonBoolVar (int)arg>
+MCDC:16,0,f,0,0,<NonBoolVar (int)arg>
+BRDA:18,0,0,-
+BRDA:18,0,1,-
+MCDC:18,0,t,0,0,!(<NonBoolVar (int)arg>)
+MCDC:18,0,f,0,0,!(<NonBoolVar (int)arg>)
+BRDA:25,0,0,-
+BRDA:25,0,1,-
+MCDC:25,0,t,0,0,((<fcall> <NonBoolVar (int (int))second_inlined_func>)(<FCallArg at <(Auto)tests/test_inlines.c:25:26>>) EQ <IntLiteral 0>)
+MCDC:25,0,f,0,0,((<fcall> <NonBoolVar (int (int))second_inlined_func>)(<FCallArg at <(Auto)tests/test_inlines.c:25:26>>) EQ <IntLiteral 0>)
+BRDA:27,0,0,-
+BRDA:27,0,1,-
+BRDA:27,0,2,-
+BRDA:27,0,3,-
+MCDC:27,0,t,0,0,(<fcall> <NonBoolVar (int (bool  bool))inlined_func>)(<FCallArg at <(Exp)tests/test_inlines.c:27:22>>  <FCallArg at <(Exp)tests/test_inlines.c:27:28>>)
+MCDC:27,0,f,0,0,(<fcall> <NonBoolVar (int (bool  bool))inlined_func>)(<FCallArg at <(Exp)tests/test_inlines.c:27:22>>  <FCallArg at <(Exp)tests/test_inlines.c:27:28>>)
+MCDC:27,0,t,0,1,(<fcall> <NonBoolVar (int (int))second_inlined_func>)(<FCallArg at <(Auto)tests/test_inlines.c:27:58>>)
+MCDC:27,0,f,0,1,(<fcall> <NonBoolVar (int (int))second_inlined_func>)(<FCallArg at <(Auto)tests/test_inlines.c:27:58>>)
+BRDA:34,0,0,1
+BRDA:34,0,1,0
+MCDC:34,0,t,0,0,((<fcall> <NonBoolVar (int (bool  bool))inlined_func>)(<FCallArg at <(Auto)tests/test_inlines.c:34:19>>  <FCallArg at <(Auto)tests/test_inlines.c:34:22>>) GT <IntLiteral 22>)
+MCDC:34,0,f,0,0,((<fcall> <NonBoolVar (int (bool  bool))inlined_func>)(<FCallArg at <(Auto)tests/test_inlines.c:34:19>>  <FCallArg at <(Auto)tests/test_inlines.c:34:22>>) GT <IntLiteral 22>)
+BRDA:37,0,0,1
+BRDA:37,0,1,0
+BRDA:37,0,2,0
+BRDA:37,0,3,0
+MCDC:37,0,t,0,0,<NonBoolVar (int)a>
+MCDC:37,0,f,0,0,<NonBoolVar (int)a>
+MCDC:37,0,t,0,1,((<fcall> <NonBoolVar (int (void))deeply_inlined_func>)() EQ <IntLiteral 0>)
+MCDC:37,0,f,0,1,((<fcall> <NonBoolVar (int (void))deeply_inlined_func>)() EQ <IntLiteral 0>)
+BRDA:40,0,0,1
+BRDA:40,0,1,0
+BRDA:40,0,2,1
+BRDA:40,0,3,0
+MCDC:40,0,t,0,0,<NonBoolVar (int)test1>
+MCDC:40,0,f,0,0,<NonBoolVar (int)test1>
+MCDC:40,0,t,0,1,<NonBoolVar (int)test2>
+MCDC:40,0,f,0,1,<NonBoolVar (int)test2>
+DA:7,1
+DA:9,1
+DA:16,0
+DA:18,0
+DA:25,0
+DA:27,0
+DA:34,1
+DA:37,1
+DA:40,1
+BRF:26
+BRH:6
+LF:9
+LH:5
+end_of_record

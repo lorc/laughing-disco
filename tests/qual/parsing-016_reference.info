@@ -1,0 +1,56 @@
+TN:MCDC_Test_Report
+SF:tests/qual/parsing-016.c
+BRDA:7,0,0,1
+BRDA:7,0,1,1
+BRDA:7,0,2,1
+BRDA:7,0,3,0
+BRDA:7,0,4,0
+BRDA:7,0,5,1
+BRDA:7,0,6,1
+BRDA:7,0,7,1
+BRDA:7,0,8,0
+BRDA:7,0,9,1
+BRDA:7,0,10,0
+BRDA:7,0,11,0
+BRDA:7,0,12,1
+BRDA:7,0,13,1
+BRDA:7,0,14,0
+BRDA:7,0,15,1
+BRDA:7,0,16,0
+BRDA:7,0,17,0
+BRDA:7,0,18,1
+BRDA:7,0,19,1
+BRDA:7,0,20,1
+BRDA:7,0,21,0
+BRDA:7,0,22,0
+BRDA:7,0,23,1
+MCDC:7,0,t,0,0,!(<NonBoolVar (int)a>)
+MCDC:7,0,f,0,0,!(<NonBoolVar (int)a>)
+MCDC:7,0,t,0,1,!(<NonBoolVar (int)b>)
+MCDC:7,0,f,0,1,!(<NonBoolVar (int)b>)
+MCDC:7,0,t,0,2,<NonBoolVar (int)c>
+MCDC:7,0,f,0,2,<NonBoolVar (int)c>
+MCDC:7,0,t,0,3,!(<NonBoolVar (int)a>)
+MCDC:7,0,f,0,3,!(<NonBoolVar (int)a>)
+MCDC:7,0,t,0,4,<NonBoolVar (int)b>
+MCDC:7,0,f,0,4,<NonBoolVar (int)b>
+MCDC:7,0,t,0,5,!(<NonBoolVar (int)c>)
+MCDC:7,0,f,0,5,!(<NonBoolVar (int)c>)
+MCDC:7,0,t,0,6,<NonBoolVar (int)a>
+MCDC:7,0,f,0,6,<NonBoolVar (int)a>
+MCDC:7,0,t,0,7,<NonBoolVar (int)b>
+MCDC:7,0,f,0,7,<NonBoolVar (int)b>
+MCDC:7,0,t,0,8,<NonBoolVar (int)c>
+MCDC:7,0,f,0,8,<NonBoolVar (int)c>
+MCDC:7,0,t,0,9,<NonBoolVar (int)a>
+MCDC:7,0,f,0,9,<NonBoolVar (int)a>
+MCDC:7,0,t,0,10,!(<NonBoolVar (int)b>)
+MCDC:7,0,f,0,10,!(<NonBoolVar (int)b>)
+MCDC:7,0,t,0,11,!(<NonBoolVar (int)c>)
+MCDC:7,0,f,0,11,!(<NonBoolVar (int)c>)
+DA:7,2
+BRF:24
+BRH:14
+LF:1
+LH:1
+end_of_record

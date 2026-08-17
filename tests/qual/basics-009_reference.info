@@ -1,0 +1,47 @@
+TN:MCDC_Test_Report
+SF:tests/qual/basics-009.c
+BRDA:6,0,0,8
+BRDA:6,0,1,1
+MCDC:6,0,t,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 255>))
+MCDC:6,0,f,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 255>))
+BRDA:8,0,0,7
+BRDA:8,0,1,1
+MCDC:8,0,t,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 1>))
+MCDC:8,0,f,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 1>))
+BRDA:10,0,0,1
+BRDA:10,0,1,6
+MCDC:10,0,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 0>)
+MCDC:10,0,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 0>)
+BRDA:12,0,0,1
+BRDA:12,0,1,5
+MCDC:12,0,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 1>)
+MCDC:12,0,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 1>)
+BRDA:14,0,0,2
+BRDA:14,0,1,3
+MCDC:14,0,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 256>)
+MCDC:14,0,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 256>)
+BRDA:16,0,0,1
+BRDA:16,0,1,2
+MCDC:16,0,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 1024>)
+MCDC:16,0,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 1024>)
+BRDA:18,0,0,1
+BRDA:18,0,1,1
+MCDC:18,0,t,1,0,(<NonBoolVar (int)a> LT <IntLiteral 65536>)
+MCDC:18,0,f,1,0,(<NonBoolVar (int)a> LT <IntLiteral 65536>)
+BRDA:20,0,0,1
+BRDA:20,0,1,0
+MCDC:20,0,t,0,0,(<NonBoolVar (int)a> LT <IntLiteral 65538>)
+MCDC:20,0,f,0,0,(<NonBoolVar (int)a> LT <IntLiteral 65538>)
+DA:6,9
+DA:8,8
+DA:10,7
+DA:12,6
+DA:14,5
+DA:16,3
+DA:18,2
+DA:20,1
+BRF:16
+BRH:15
+LF:8
+LH:8
+end_of_record

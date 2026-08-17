@@ -1,0 +1,17 @@
+TN:MCDC_Test_Report
+SF:tests/qual/parsing-004.c
+BRDA:10,0,0,1
+BRDA:10,0,1,0
+MCDC:10,0,t,0,0,(<NonBoolVar (u64)x> GT sizeof(u64))
+MCDC:10,0,f,0,0,(<NonBoolVar (u64)x> GT sizeof(u64))
+BRDA:13,0,0,-
+BRDA:13,0,1,-
+MCDC:13,0,t,0,0,(<NonBoolVar (u64)x> GT sizeof(char[64]))
+MCDC:13,0,f,0,0,(<NonBoolVar (u64)x> GT sizeof(char[64]))
+DA:10,1
+DA:13,0
+BRF:4
+BRH:1
+LF:2
+LH:1
+end_of_record
