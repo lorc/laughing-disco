@@ -1563,6 +1563,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 ret.append(TracePoint(instructions[state.instr_idx].address, not inverted, e))
                 return state.derive(target_reg=None, partial=False)
 
+        b_const = isinstance(e.b, IntLiteral)
 
         new_state = handle_operand(e.a, state)
         new_state = match_optional_store(new_state)
@@ -1608,10 +1609,18 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             case "tbnz":
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_branch_isntr(instructions[idx + 1], "b")
+
+                if b_const and e.b.value != 0:
+                    inverted = not inverted
+
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
             case "tbz":
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_branch_isntr(instructions[idx + 1], "b")
+
+                if b_const and e.b.value != 0:
+                    inverted = not inverted
+
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
             case "cset" | "csel":
                 instr = instructions[idx]
