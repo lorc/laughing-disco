@@ -21,6 +21,7 @@ from typing import Optional, Unpack
 from pprint import pformat, pprint
 from dataclasses import dataclass, fields
 from copy import copy
+from collections import defaultdict
 import capstone
 from mcdc_tool_capstone_helper import aarch64_reg_name
 from mcdc_tool_s_loc import SFileLoc, SFileLocMap
@@ -259,8 +260,20 @@ def _get_fcalls_in_expr(expr: SAST) -> list[str]:
         ret.extend(_get_fcalls_in_expr(child))
     return ret
 
+def _loc_has_other_expr(expr: SAST, loc: DwarfLoc,
+                          by_line: dict[int, list[SAST]]) -> bool:
+    if _loc_is_in_expr(expr, loc):
+        return False
+
+    for other in by_line.get(loc.lp_state.line, ()):
+        if other is not expr and _loc_is_in_expr(other, loc):
+            return True
+
+    return False
+
 def _get_addr_ranges_for_expr(expr: SAST, locations: list[DwarfLoc],
-                              inlines: list[DwarfInlinedFunc]) -> list[(int, int)]:
+                              inlines: list[DwarfInlinedFunc],
+                              expr_by_line: dict[int, list[SAST]]) -> list[(int, int)]:
     ret = []
     # Our life would be much easier if there wasn't forced inlines
     # But taking inlines into account, the same expression can appear
@@ -279,7 +292,7 @@ def _get_addr_ranges_for_expr(expr: SAST, locations: list[DwarfLoc],
                 # TODO: Optimise me, please. No need to traverse
                 # 'locations' for ech inline
                 r = _get_addr_ranges_for_expr(expr, _get_locations_for_inline(locations, inline),
-                                              [])
+                                              [], expr_by_line)
                 # Heuristic: we need to include the whole inlined function
                 # even if it is absent in DWARF location data
                 if not r:
@@ -319,6 +332,9 @@ def _get_addr_ranges_for_expr(expr: SAST, locations: list[DwarfLoc],
                     # Try to find begining of the statement
                     if not loc.lp_state.is_stmt:
                         for idx2 in range(idx, 0, -1):
+                            if _loc_has_other_expr(expr, locations[idx2],
+                                                       expr_by_line):
+                                break
                             if locations[idx2].lp_state.is_stmt:
                                 start_loc = locations[idx2]
                                 break
@@ -347,8 +363,13 @@ class ExprAddressData:
 
 def _get_next_expr_for_processing(locs: list[DwarfLoc], expressions: list[SAST],
                                   inlines: list[DwarfInlinedFunc]) -> Optional[ExprAddressData]:
+    expr_by_line: dict[int, list[SAST]] = defaultdict(list)
     for expr in expressions:
-        ranges = _get_addr_ranges_for_expr(expr, locs, inlines)
+        if expr.loc and expr.loc.line:
+            expr_by_line[expr.loc.line].append(expr)
+
+    for expr in expressions:
+        ranges = _get_addr_ranges_for_expr(expr, locs, inlines, expr_by_line)
         for r in ranges:
             yield ExprAddressData(expr, r[0], r[1] + 24)
 
