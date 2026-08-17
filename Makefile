@@ -11,6 +11,7 @@ TEST_SRCS = \
 	tests/test_goto.c \
 	tests/test_locations.c \
 	tests/test_complex_statement_expr.c \
+	tests/test_bitfields.c
 
 QUALIFICATION_TESTS = \
 	tests/qual/basics-001.c \
