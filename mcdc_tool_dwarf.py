@@ -1423,7 +1423,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
         new_state = ff_to_instruction(new_state, [
             "b.lt", "b.le", "b.ls", "b.lo", "b.gt", "b.ge", "b.hs", "b.hi", "tbnz",
-            "cbnz", "tbz", "cbz", "cset"
+            "cbnz", "tbz", "cbz", "cset", "csel", "csinc", "cinc"
         ], {"csel"})
 
         while instructions[new_state.instr_idx].mnemonic == "subs":
@@ -1480,7 +1480,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
-            case "cset":
+            case "cset" | "csel" | "csinc" | "cinc":
                 # TBD: Match cset condition flags
                 instr = instructions[new_state.instr_idx]
                 ret.append(TracePoint(instr.address, False, e))
