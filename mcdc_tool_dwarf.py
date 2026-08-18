@@ -1179,7 +1179,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 else:
                     abs_addr = v.arg
                 TRACE_MATCH(f"Global variable offset is {abs_addr:x}")
-                state = ff_to_instruction(state, ["adrp", "adr"])
+                state = ff_to_instruction(state, ["adrp", "adr", "ldr", "ldur", "ldrb",
+                                                  "ldrh", "ldrsw", "ldp", "ldursw"])
                 instr = instructions[state.instr_idx]
                 match instr.mnemonic:
                     case "adrp":
