@@ -26,6 +26,20 @@ int test_or_call(bool a, bool b, bool c)
         return d;
 }
 
+bool test_not_assign_call(bool a, bool b, bool c)
+{
+        bool d = c;
+
+        d &= !get_xor(a, b);
+
+        return d;
+}
+
+bool test_not_call_ret(bool a, bool b, bool c)
+{
+        return (a && !get_xor(b, c));
+}
+
 int main(int argc, char *argv[])
 {
         test_or_call(false, false, true);
@@ -39,6 +53,10 @@ int main(int argc, char *argv[])
         test_cond_params_2(false, false, false);
         test_cond_params_2(true, false, true);
         test_cond_params_2(true, true, false);
+
+        test_not_assign_call(true, true, false);
+
+        test_not_call_ret(true, false, true);
 
         return 0;
 }

@@ -144,9 +144,12 @@ class ExprTraceInfo:
         self.expr = expr
         self.trace_points = tp
 
+    def tp_to_str(self, tp):
+        return hex(tp.addr) + (f":{tp.reg}" if getattr(tp, "reg", None) else "")
+
     def format(self):
         ret = f"; {self.expr.loc_range}\n"
-        ret += f"{self.expr.uuid} " + ",".join((hex(t.addr) for t in self.trace_points)) + "\n"
+        ret += f"{self.expr.uuid} " + ",".join(self.tp_to_str(t) for t in self.trace_points) + "\n"
         return ret
 
     def __str__(self):
@@ -843,13 +846,16 @@ def match_sub_instr_regs(instr: capstone.CsInsn, reg1, reg2):
 
 class TracePoint:
 
-    def __init__(self, addr: int, inverted: bool, bool_expr: BoolExpression):
+    def __init__(self, addr: int, inverted: bool, bool_expr: BoolExpression,
+                 reg: Optional[str] = None):
         self.addr = addr
         self.inverted = inverted
         self.bool_expr = bool_expr
+        self.reg = reg
 
     def __repr__(self) -> str:
-        return f"<TracePoint( 0x{self.addr:06x} : {self.bool_expr} (inverted: {self.inverted}) )>"
+        reg = f":{self.reg}" if self.reg else ""
+        return f"<TracePoint( 0x{self.addr:06x}{reg} : {self.bool_expr} (inverted: {self.inverted}) )>"
 
 
 @dataclass
@@ -1519,7 +1525,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             case "orr":
                 if instructions[state.instr_idx + 1].mnemonic != "str":
                     raise MatchError("Found implicit cast try with orr, but without store")
-                ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
+                instr = instructions[state.instr_idx]
+                reg = get_instr_reg_operand(instr, 2)
+                ret.append(TracePoint(instr.address, False, e, reg=reg))
                 return state.advance()
             case mnemonic:
                 if not state.implicit_cast_one_more_try:
@@ -1548,7 +1556,16 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_branch_isntr(instructions[state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[state.instr_idx].address, True, e.a))
                 return state.advance(2).derive(partial=True)
-            case "eor" | "bic" | "cset" | "csel":
+            case "eor" | "bic":
+                instr = instructions[state.instr_idx]
+                if instr.mnemonic == "eor":
+                    reg = get_instr_reg_operand(instr, 1)
+                else:
+                    reg = get_instr_reg_operand(instr, 2)
+
+                ret.append(TracePoint(instr.address, False, e.a, reg=reg))
+                return state.advance().derive(partial=True)
+            case "cset" | "csel":
                 ret.append(TracePoint(instructions[state.instr_idx].address, False, e.a))
                 return state.advance().derive(partial=True)
             case mnemonic:
