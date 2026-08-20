@@ -932,13 +932,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         "cbz", "cset", "csel", "ret"
     }
 
-    def ff_to_instruction(state: MatchState, instr: list[str]) -> MatchState:
+    def ff_to_instruction(state: MatchState, instr: list[str], dont_stop_at: set[str]=set()) -> MatchState:
         skip = state.instr_idx
         while skip < len(instructions):
             if instructions[skip].mnemonic in instr:
                 return state.derive(instr_idx=skip)
             # Newer go past end of block
-            if instructions[skip].mnemonic in END_OF_BLOCK_INSTR:
+            if instructions[skip].mnemonic in END_OF_BLOCK_INSTR - dont_stop_at:
                 break
             skip += 1
         return state
@@ -1403,7 +1403,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         new_state = ff_to_instruction(new_state, [
             "b.lt", "b.le", "b.ls", "b.lo", "b.gt", "b.ge", "b.hs", "b.hi", "tbnz",
             "cbnz", "tbz", "cbz", "cset"
-        ])
+        ], {"csel"})
 
         while instructions[new_state.instr_idx].mnemonic == "subs":
             # We need subs op if it is not handled by IntLiteral() handler
