@@ -1430,10 +1430,19 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         new_state = match_optional_store(new_state)
         new_state = match_optional_zero_mov(new_state)
 
-        new_state = ff_to_instruction(new_state, [
-            "b.lt", "b.le", "b.ls", "b.lo", "b.gt", "b.ge", "b.hs", "b.hi", "tbnz",
-            "cbnz", "tbz", "cbz", "cset", "csel", "csinc", "cinc"
-        ], {"csel"})
+        # Sometimes clang may use csel for ariphmetic operations,
+        # followed by actual b.cond insn. Although for ternaries csel/cset are
+        # common, so it can't be ignored completely. Thus try to find b.cond
+        # first and only use cond select instructions as a fallback
+        BRANCH_INSN = [ "b.lt", "b.le", "b.ls", "b.lo", "b.gt", "b.ge", "b.hs",
+                        "b.hi", "tbnz", "cbnz", "tbz", "cbz" ]
+        CSET_INSN = ["cset", "csel", "csinc", "cinc"]
+        search_state = ff_to_instruction(new_state, BRANCH_INSN, {"csel"})
+
+        if instructions[search_state.instr_idx].mnemonic in BRANCH_INSN:
+            new_state = search_state
+        else:
+            new_state = ff_to_instruction(new_state, CSET_INSN)
 
         while instructions[new_state.instr_idx].mnemonic == "subs":
             # We need subs op if it is not handled by IntLiteral() handler

@@ -103,6 +103,18 @@ int test_ariphmetic_14(int a)
     return !(a & 0x1);
 }
 
+int test_ariphmetic_15(int a, int b)
+{
+    if (b <= (a + 31) / 32)
+        return 1;
+    return 0;
+}
+
+int test_ariphmetic_16(int a)
+{
+    return (a >> 2) >= 10 ? 100 : 200;
+}
+
 int main()
 {
     test_ariphmetic_1(1);
@@ -144,4 +156,10 @@ int main()
 
     test_ariphmetic_14(5);
     test_ariphmetic_14(2);
+
+    test_ariphmetic_15(23, 12);
+
+    test_ariphmetic_16(2);
+
+    return 0;
 }
