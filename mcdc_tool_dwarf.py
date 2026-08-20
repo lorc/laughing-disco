@@ -1571,30 +1571,24 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         TRACE_MATCH(f"{instructions[idx].mnemonic=}")
         match instructions[idx].mnemonic:
             case "b.eq":
-                match_branch_isntr(instructions[idx], "b.eq")
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
             case "b.ne":
-                match_branch_isntr(instructions[idx], "b.ne")
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
             case "cbnz":
-                match_branch_isntr(instructions[idx], "cbnz")
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
             case "cbz":
-                match_branch_isntr(instructions[idx], "cbz")
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
             case "tbnz":
-                match_branch_isntr(instructions[idx], "tbnz")
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
             case "tbz":
-                match_branch_isntr(instructions[idx], "tbz")
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
