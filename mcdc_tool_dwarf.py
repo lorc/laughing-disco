@@ -1566,7 +1566,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 ret.append(TracePoint(instr.address, False, e.a, reg=reg))
                 return state.advance().derive(partial=True)
             case "cset" | "csel":
-                ret.append(TracePoint(instructions[state.instr_idx].address, False, e.a))
+                instr = instructions[state.instr_idx]
+
+                cond = instr.op_str.split(',')[-1].strip().lower()
+                ret.append(TracePoint(instructions[state.instr_idx].address,
+                                      cond == "eq", e.a))
                 return state.advance().derive(partial=True)
             case mnemonic:
                 raise MatchError(f"Don't know how to handle {mnemonic} (OP_NOT)")

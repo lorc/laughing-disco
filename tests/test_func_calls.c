@@ -5,6 +5,11 @@ bool get_xor(bool a, bool b) {
         return a != b;
 }
 
+int get_int(int a, int b)
+{
+        return a - b;
+}
+
 bool test_cond_params_2(bool a, bool b, bool c)
 {
     bool d = get_xor(a && b, b && c) || get_xor(b, c);
@@ -40,6 +45,13 @@ bool test_not_call_ret(bool a, bool b, bool c)
         return (a && !get_xor(b, c));
 }
 
+bool test_not_call_ret2(int a, int b, int c)
+{
+        bool d = !get_int(a, b) || !get_int(b, c);
+
+        return d;
+}
+
 int main(int argc, char *argv[])
 {
         test_or_call(false, false, true);
@@ -57,6 +69,9 @@ int main(int argc, char *argv[])
         test_not_assign_call(true, true, false);
 
         test_not_call_ret(true, false, true);
+
+        test_not_call_ret2(0, 0, 0);
+        test_not_call_ret2(1, 0, 0);
 
         return 0;
 }
