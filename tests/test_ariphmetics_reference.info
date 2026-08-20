@@ -68,6 +68,14 @@ BRDA:103,0,0,1
 BRDA:103,0,1,1
 MCDC:103,0,t,1,0,!((<NonBoolExpr> <NonBoolVar (int)a> & <IntLiteral 1>))
 MCDC:103,0,f,1,0,!((<NonBoolExpr> <NonBoolVar (int)a> & <IntLiteral 1>))
+BRDA:108,0,0,0
+BRDA:108,0,1,1
+MCDC:108,0,t,0,0,(<NonBoolVar (int)b> LE (<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> + <IntLiteral 31>) / <IntLiteral 32>))
+MCDC:108,0,f,0,0,(<NonBoolVar (int)b> LE (<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> + <IntLiteral 31>) / <IntLiteral 32>))
+BRDA:115,0,0,0
+BRDA:115,0,1,1
+MCDC:115,0,t,0,0,((<NonBoolExpr> <NonBoolVar (int)a> >> <IntLiteral 2>) GE <IntLiteral 10>)
+MCDC:115,0,f,0,0,((<NonBoolExpr> <NonBoolVar (int)a> >> <IntLiteral 2>) GE <IntLiteral 10>)
 DA:10,1
 DA:18,3
 DA:23,1
@@ -84,8 +92,10 @@ DA:84,2
 DA:90,2
 DA:96,2
 DA:103,2
-BRF:34
-BRH:25
-LF:16
-LH:16
+DA:108,1
+DA:115,1
+BRF:38
+BRH:27
+LF:18
+LH:18
 end_of_record
