@@ -69,6 +69,9 @@ int test_or(int a)
         if (a < 6 || a > 8)
                 return a;
 
+        if (a >= 64 || a < 0)
+                return a;
+
         if (a < 16 || a > 18)
                 return a;  
 

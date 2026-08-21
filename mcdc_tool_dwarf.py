@@ -1425,6 +1425,20 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         op2_state = handle_operand(e.b, op1_state)
         new_state = op2_state
 
+        def cmp_to_imm(instructions, idx) -> bool:
+            """Check whether compare was to immediate value or not"""
+            for curr in range(1, len(instructions)):
+                if idx - curr < 0:
+                    break
+                instr = instructions[idx - curr]
+                if instr.mnemonic in ("subs", "adds"):
+                    ops = instr.operands
+                    return ops[-1].type == capstone.arm64_const.ARM64_OP_IMM
+                if instr.mnemonic in END_OF_BLOCK_INSTR:
+                    break
+
+            return False
+
         op_is_gt_ge = (e.op == BoolExpression.OP_GT or e.op == BoolExpression.OP_GE)
 
         new_state = match_optional_store(new_state)
@@ -1466,8 +1480,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     inverted = not inverted
 
                 mnemonic = instructions[new_state.instr_idx].mnemonic
-                if (e.op == BoolExpression.OP_LE and mnemonic in ("b.lt", "b.lo")) or \
-                   (e.op == BoolExpression.OP_LT and mnemonic in ("b.le", "b.ls")):
+                if not cmp_to_imm(instructions, new_state.instr_idx) and \
+                   ((e.op == BoolExpression.OP_LE and mnemonic in ("b.lt", "b.lo")) or \
+                    (e.op == BoolExpression.OP_LT and mnemonic in ("b.le", "b.ls"))):
                     inverted = not inverted
 
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
@@ -1478,8 +1493,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     inverted = not inverted
 
                 mnemonic = instructions[new_state.instr_idx].mnemonic
-                if (e.op == BoolExpression.OP_GE and mnemonic in ("b.gt", "b.hi")) or \
-                   (e.op == BoolExpression.OP_GT and mnemonic in ("b.ge", "b.hs")):
+                if not cmp_to_imm(instructions, new_state.instr_idx) and \
+                   ((e.op == BoolExpression.OP_GE and mnemonic in ("b.gt", "b.hi")) or \
+                   (e.op == BoolExpression.OP_GT and mnemonic in ("b.ge", "b.hs"))):
                     inverted = not inverted
 
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
