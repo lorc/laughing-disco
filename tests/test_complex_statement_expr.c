@@ -47,9 +47,29 @@ int test_func()
 	return 0;
 }
 
+static bool test(unsigned int nr, unsigned int var)
+{
+	return (var >> nr) & 1;
+}
+
+#define test_bit(nr, addr) ({		\
+	test((nr), *(addr));			\
+})
+
+int test_func2(unsigned int nr, unsigned int var)
+{
+	if (nr >= 32 || !test_bit(nr, &var))
+		return 1;
+
+	return 1;
+}
+
 int main(void)
 {
 	test_func();
+
+	test_func2(1, 0x2);
+	test_func2(64, 0x0);
 
 	return 0;
 }
