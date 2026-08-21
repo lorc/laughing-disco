@@ -290,10 +290,12 @@ class SAST:
             # For StatementExpression replace it with its return expression
             if isinstance(ch, StatementExpression):
                 self.inner[idx] = ch.ret_expr
+                self.inner[idx].parent = self
 
             # For c-style cast - replace with value that is casted
             if isinstance(ch, CCast):
                 self.inner[idx] = ch.casted
+                self.inner[idx].parent = self
 
     def function_name(self) -> str:
         return self._function_name
