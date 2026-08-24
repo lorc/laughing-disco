@@ -2,8 +2,8 @@ import argparse
 import sys
 import os
 
-def extract_mcdc_metrics(filepath: str) -> set:
-    """Extracts MC/DC metrics into set for direct comparison."""
+def extract_metrics(filepath: str) -> set:
+    """Extracts MC/DC and branch metrics into set for direct comparison."""
     coverage = set()
     current_file = "unknown"
     
@@ -24,9 +24,16 @@ def extract_mcdc_metrics(filepath: str) -> set:
                         taken = parts[3]
                         cond_index = parts[4]
                         
-                        mcdc_string = f"SF:{current_file} | Line {line_num:03} | Cond {cond_index}/{group_size} | Sense: {sense.upper()} | Taken: {taken}"
+                        mcdc_string = f"SF:{current_file} | Line {line_num:>4} | " \
+                                      f"Cond {cond_index}/{group_size} | Sense: {sense.upper()} | Taken: {taken}"
                         coverage.add(mcdc_string)
-                        
+                elif line.startswith("BRDA:"):
+                    # Format: BRDA:<line_number>,<block_number>,<branch_number>,<taken>
+                    parts = line[5:].split(',')
+                    if len(parts) == 4:
+                        line_num, block, branch, taken = parts
+                        coverage.add(f"SF:{current_file} | Line {line_num:>4} | "
+                                     f"Branch {branch}/{block} | Count: {taken}")
     except FileNotFoundError:
         print(f"Error: Could not find file {filepath}")
         sys.exit(2)
@@ -39,8 +46,8 @@ def main():
     parser.add_argument("new", help="Path to the generated .info file")
     args = parser.parse_args()
 
-    baseline_set = extract_mcdc_metrics(args.baseline)
-    new_set = extract_mcdc_metrics(args.new)
+    baseline_set = extract_metrics(args.baseline)
+    new_set = extract_metrics(args.new)
 
     if baseline_set == new_set:
         print(f"PASS: {args.new} matches baseline.")
