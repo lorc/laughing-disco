@@ -1363,6 +1363,14 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
                     new_state.instr_idx += 2
+                case "b.eq":
+                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.a))
+                    new_state.instr_idx += 2
+                case "b.ne":
+                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
+                    new_state.instr_idx += 2
                 case mnemonic:
                     raise MatchError(
                     f"Expected tb(n)z, cb(n)z, but found {instructions[new_state.instr_idx].mnemonic}"
@@ -1406,6 +1414,14 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.b))
                     new_state.instr_idx += 2
                 case "cbnz":
+                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
+                    new_state.instr_idx += 2
+                case "b.eq":
+                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.b))
+                    new_state.instr_idx += 2
+                case "b.ne":
                     match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 2
