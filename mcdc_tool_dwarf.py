@@ -1555,7 +1555,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 ret.append(TracePoint(instr.address, False, e, reg=reg))
                 return state.advance()
             case mnemonic:
-                if not state.implicit_cast_one_more_try:
+                if not state.implicit_cast_one_more_try and state.instr_idx > 0:
                     # Try previous instruction as inlines sometimes span to
                     # part that makes a cast
                     return handle_implicit_cast_tail(
