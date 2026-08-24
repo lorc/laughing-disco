@@ -115,6 +115,18 @@ int test_ariphmetic_16(int a)
     return (a >> 2) >= 10 ? 100 : 200;
 }
 
+char g_arr[32] = { 'a', 'b', 'c' };
+
+#define test_macro (g_arr[0]-'a'+1)
+
+int test_ariphmetic_17(char a)
+{
+    if (test_macro && (a == test_macro))
+        return 1;
+
+    return 0;
+}
+
 int main()
 {
     test_ariphmetic_1(1);
@@ -160,6 +172,8 @@ int main()
     test_ariphmetic_15(23, 12);
 
     test_ariphmetic_16(2);
+
+    test_ariphmetic_17('a');
 
     return 0;
 }
