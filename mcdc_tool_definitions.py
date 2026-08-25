@@ -632,8 +632,10 @@ class BoolExpression(SAST):
         if self.op != self.OP_NOT:
             if isinstance(self.a, BoolExpression):
                 self.inner[0] = self.a.promote_double_not()
+                self.inner[0].parent = self
             if len(self.inner) > 1 and isinstance(self.b, BoolExpression):
                 self.inner[1] = self.b.promote_double_not()
+                self.inner[1].parent = self
             return self
         if not isinstance(self.a, BoolExpression):
             return self
