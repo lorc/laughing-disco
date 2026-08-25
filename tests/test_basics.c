@@ -64,6 +64,14 @@ int test_uint_cmp(unsigned int a, unsigned int b)
         return 0;
 }
 
+int test_uint_cmp2(unsigned int a)
+{
+        if ((int)a < 0)
+                return 1;
+
+        return 0;
+}
+
 int test_or(int a)
 {
         if (a < 6 || a > 8)
@@ -176,6 +184,8 @@ int main(int argc, char *argv[])
         test_uint_cmp(0, 2);
         test_uint_cmp(1, 3);
         test_uint_cmp(23U, 4);
+
+        test_uint_cmp2(12);
 
         test_or(5);
         test_or(7);
