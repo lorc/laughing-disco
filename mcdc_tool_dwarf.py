@@ -1569,6 +1569,16 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 else:
                     ret.append(TracePoint(instr.address, False, e))
                 return state.advance()
+            case "and":
+                if instructions[state.instr_idx + 1].mnemonic != "str":
+                    raise MatchError("Found implicit cast try with and, but without store")
+
+                if instructions[state.instr_idx + 2].mnemonic in ("cbz", "cbnz", "tbz", "tbnz" ) or \
+                   instructions[state.instr_idx + 2].mnemonic.startswith("b."):
+                    raise MatchError("Found branch on stored value, ignore this store")
+
+                ret.append(TracePoint(instructions[state.instr_idx + 1].address, False, e))
+                return state.advance(2)
             case "orr":
                 if instructions[state.instr_idx + 1].mnemonic != "str":
                     raise MatchError("Found implicit cast try with orr, but without store")

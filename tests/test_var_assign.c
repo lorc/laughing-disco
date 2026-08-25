@@ -1,7 +1,7 @@
 /* Test for variables assigning by conditional expressions */
 #include <stdbool.h>
 
-#if 0
+
 bool test_complex_assign(int a, int b, int c)
 {
 
@@ -12,7 +12,6 @@ bool test_complex_assign(int a, int b, int c)
 
         return d;
 }
-#endif
 
 bool test_var_assign(char* array)
 {
@@ -21,11 +20,16 @@ bool test_var_assign(char* array)
     bool c = (array[2] == 'c') || (array[2] == '1') || (array[2] == 'T');
     bool d = ((char)array[3] == 'd') || (array[3] == '1') || (array[3] == 'T');
 
-#if 0
     bool res = ((a || b) && (c || d));
-#endif
 
     return false;
+}
+
+unsigned int test_ternaries_assign(bool a)
+{
+    unsigned int b = a ? 1U : 0;
+
+    return b;
 }
 
 char array1[] = { 'a', 'b', 'c', 'd'};
@@ -41,9 +45,11 @@ int main(int argc, char *array[])
     test_var_assign(array3);
     test_var_assign(array4);
     test_var_assign(array5);
-#if 0
+
     test_complex_assign(false, false, false);
     test_complex_assign(true, false, false);
-#endif
+
+    test_ternaries_assign(true);
+
     return 0;
 }
