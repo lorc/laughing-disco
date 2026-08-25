@@ -95,6 +95,9 @@ int test_ariphmetic_13(int a)
 {
     bool var = !!(a / 2);
 
+    if (var || !!(a / 3))
+        return 0;
+
     return var;
 }
 
@@ -163,7 +166,7 @@ int main()
     test_ariphmetic_12(0x1, 0x2);
 
 
-    test_ariphmetic_13(2);
+    test_ariphmetic_13(1);
     test_ariphmetic_13(3);
 
     test_ariphmetic_14(5);

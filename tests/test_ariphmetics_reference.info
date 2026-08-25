@@ -60,30 +60,38 @@ BRDA:90,0,0,1
 BRDA:90,0,1,1
 MCDC:90,0,t,1,0,(<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> ^ <NonBoolVar (int)b>) / <IntLiteral 2>)
 MCDC:90,0,f,1,0,(<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> ^ <NonBoolVar (int)b>) / <IntLiteral 2>)
-BRDA:96,0,0,2
-BRDA:96,0,1,0
-MCDC:96,0,t,0,0,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 2>)
-MCDC:96,0,f,0,0,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 2>)
-BRDA:103,0,0,1
-BRDA:103,0,1,1
-MCDC:103,0,t,1,0,!((<NonBoolExpr> <NonBoolVar (int)a> & <IntLiteral 1>))
-MCDC:103,0,f,1,0,!((<NonBoolExpr> <NonBoolVar (int)a> & <IntLiteral 1>))
-BRDA:108,0,0,0
-BRDA:108,0,1,1
-MCDC:108,0,t,0,0,(<NonBoolVar (int)b> LE (<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> + <IntLiteral 31>) / <IntLiteral 32>))
-MCDC:108,0,f,0,0,(<NonBoolVar (int)b> LE (<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> + <IntLiteral 31>) / <IntLiteral 32>))
-BRDA:115,0,0,0
-BRDA:115,0,1,1
-MCDC:115,0,t,0,0,((<NonBoolExpr> <NonBoolVar (int)a> >> <IntLiteral 2>) GE <IntLiteral 10>)
-MCDC:115,0,f,0,0,((<NonBoolExpr> <NonBoolVar (int)a> >> <IntLiteral 2>) GE <IntLiteral 10>)
-BRDA:124,0,0,1
-BRDA:124,0,1,0
-BRDA:124,0,2,0
-BRDA:124,0,3,1
-MCDC:124,0,t,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>)
-MCDC:124,0,f,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>)
-MCDC:124,0,t,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
-MCDC:124,0,f,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
+BRDA:96,0,0,1
+BRDA:96,0,1,1
+MCDC:96,0,t,1,0,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 2>)
+MCDC:96,0,f,1,0,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 2>)
+BRDA:98,0,0,1
+BRDA:98,0,1,1
+BRDA:98,0,2,0
+BRDA:98,0,3,1
+MCDC:98,0,t,1,0,<BoolVar var>
+MCDC:98,0,f,1,0,<BoolVar var>
+MCDC:98,0,t,0,1,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 3>)
+MCDC:98,0,f,0,1,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 3>)
+BRDA:106,0,0,1
+BRDA:106,0,1,1
+MCDC:106,0,t,1,0,!((<NonBoolExpr> <NonBoolVar (int)a> & <IntLiteral 1>))
+MCDC:106,0,f,1,0,!((<NonBoolExpr> <NonBoolVar (int)a> & <IntLiteral 1>))
+BRDA:111,0,0,0
+BRDA:111,0,1,1
+MCDC:111,0,t,0,0,(<NonBoolVar (int)b> LE (<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> + <IntLiteral 31>) / <IntLiteral 32>))
+MCDC:111,0,f,0,0,(<NonBoolVar (int)b> LE (<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> + <IntLiteral 31>) / <IntLiteral 32>))
+BRDA:118,0,0,0
+BRDA:118,0,1,1
+MCDC:118,0,t,0,0,((<NonBoolExpr> <NonBoolVar (int)a> >> <IntLiteral 2>) GE <IntLiteral 10>)
+MCDC:118,0,f,0,0,((<NonBoolExpr> <NonBoolVar (int)a> >> <IntLiteral 2>) GE <IntLiteral 10>)
+BRDA:127,0,0,1
+BRDA:127,0,1,0
+BRDA:127,0,2,0
+BRDA:127,0,3,1
+MCDC:127,0,t,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>)
+MCDC:127,0,f,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>)
+MCDC:127,0,t,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
+MCDC:127,0,f,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
 DA:10,1
 DA:18,3
 DA:23,1
@@ -99,12 +107,13 @@ DA:78,2
 DA:84,2
 DA:90,2
 DA:96,2
-DA:103,2
-DA:108,1
-DA:115,1
-DA:124,1
-BRF:42
-BRH:29
-LF:19
-LH:19
+DA:98,2
+DA:106,2
+DA:111,1
+DA:118,1
+DA:127,1
+BRF:46
+BRH:33
+LF:20
+LH:20
 end_of_record
