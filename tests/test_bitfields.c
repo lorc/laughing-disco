@@ -7,7 +7,7 @@ struct test_st {
             unsigned long f2:8;
             unsigned long f3:8;
             unsigned long f4:1;
-            unsigned long f5:5;
+            unsigned long f5:4;
             unsigned long f6:1;
             unsigned long f7:1;
             unsigned long f8:8;
@@ -33,6 +33,13 @@ int test_func(struct test_st *st)
     return 0;
 }
 
+int test_func2(struct test_st *st)
+{
+    if (!(st->bits.f5 >= 1))
+        return 1;
+
+    return 0;
+}
 
 int main()
 {
@@ -41,6 +48,10 @@ int main()
     g_test_st.bits.f4 = 1;
 
     test_func(&g_test_st);
+
+    g_test_st.bits.f5 = 1;
+
+    test_func2(&g_test_st);
 
 
     return 0;
