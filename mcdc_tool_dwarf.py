@@ -1426,11 +1426,17 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 2
                 case mnemonic:
+                    if mnemonic == "b":
+                        raise MatchError(f"Expected tb(n)z, cb(n)z, b.eq, b.ne but found {mnemonic}")
                     TRACE_MATCH(
                         f"Didn't found conditional op, instead got  {mnemonic} at {instructions[new_state.instr_idx].address:x}"
                     )
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 1
+
+                    if new_state.instr_idx < len(instructions) and \
+                       instructions[new_state.instr_idx].mnemonic == "b":
+                        new_state.instr_idx += 1
 
         return new_state
 
