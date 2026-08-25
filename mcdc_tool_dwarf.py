@@ -1447,7 +1447,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 if idx - curr < 0:
                     break
                 instr = instructions[idx - curr]
-                if instr.mnemonic in ("subs", "adds"):
+                if instr.mnemonic in ("subs", "adds", "ands"):
+                    # there is no sense in 'ands' operands swap
+                    if instr.mnemonic == "ands":
+                        return True
+
                     ops = instr.operands
                     return ops[-1].type == capstone.arm64_const.ARM64_OP_IMM
                 if instr.mnemonic in END_OF_BLOCK_INSTR:

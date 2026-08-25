@@ -16,12 +16,17 @@ BRDA:30,0,0,-
 BRDA:30,0,1,-
 MCDC:30,0,t,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> XOR <IntLiteral 1>)
 MCDC:30,0,f,0,0,(<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f4> XOR <IntLiteral 1>)
+BRDA:38,0,0,0
+BRDA:38,0,1,1
+MCDC:38,0,t,0,0,!((<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f5> GE <IntLiteral 1>))
+MCDC:38,0,f,0,0,!((<MemberExpr <MemberExpr <MemberExpr <NonBoolVar (struct test_st *)st>->bits>.(anonymous)>.f5> GE <IntLiteral 1>))
 DA:21,2
 DA:24,1
 DA:27,0
 DA:30,0
-BRF:8
-BRH:3
-LF:4
-LH:2
+DA:38,1
+BRF:10
+BRH:4
+LF:5
+LH:3
 end_of_record
