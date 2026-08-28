@@ -1576,6 +1576,17 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 else:
                     ret.append(TracePoint(instr.address, False, e))
                 return state.advance()
+            case "ubfx":
+                # only match 'ubfx' if it extracts single bit
+                match_instr_const_operand(instructions[state.instr_idx], 3, 1)
+
+                if state.instr_idx + 1 >= len(instructions):
+                    raise MatchError("Can't set tracepoint on ubfx, no next instr")
+
+                reg = get_instr_reg_operand(instructions[state.instr_idx], 0)
+
+                ret.append(TracePoint(instructions[state.instr_idx + 1].address, False, e, reg=reg))
+                return state.advance(1)
             case "and":
                 if instructions[state.instr_idx + 1].mnemonic not in ("str", "stur"):
                     raise MatchError("Found implicit cast try with and, but without store")
