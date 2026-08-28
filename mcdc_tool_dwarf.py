@@ -612,7 +612,8 @@ def _parse_dw_at_ranges(attr, cu: CompileUnit) -> list[DWARFRange]:
     range_lists = cu.dwarfinfo.range_lists()
     rl = range_lists.get_range_list_at_offset(attr.value, cu)
     ret = []
-    base_addr: int = 0
+    cu_low_pc = cu.get_top_DIE().attributes.get("DW_AT_low_pc")
+    base_addr: int = cu_low_pc.value if cu_low_pc else 0
     for entry in rl:
         match(entry):
             case BaseAddressEntry():
