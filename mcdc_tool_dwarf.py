@@ -1577,7 +1577,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     ret.append(TracePoint(instr.address, False, e))
                 return state.advance()
             case "and":
-                if instructions[state.instr_idx + 1].mnemonic != "str":
+                if instructions[state.instr_idx + 1].mnemonic not in ("str", "stur"):
                     raise MatchError("Found implicit cast try with and, but without store")
 
                 if instructions[state.instr_idx + 2].mnemonic in ("cbz", "cbnz", "tbz", "tbnz" ) or \
