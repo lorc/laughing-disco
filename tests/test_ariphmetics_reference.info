@@ -92,6 +92,22 @@ MCDC:127,0,t,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[
 MCDC:127,0,f,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>)
 MCDC:127,0,t,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
 MCDC:127,0,f,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
+BRDA:146,0,0,0
+BRDA:146,0,1,1
+MCDC:146,0,t,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 1> << <IntLiteral 2>))
+MCDC:146,0,f,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 1> << <IntLiteral 2>))
+BRDA:148,0,0,0
+BRDA:148,0,1,1
+MCDC:148,0,t,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 3> << <IntLiteral 2>))
+MCDC:148,0,f,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 3> << <IntLiteral 2>))
+BRDA:151,0,0,0
+BRDA:151,0,1,1
+BRDA:151,0,2,0
+BRDA:151,0,3,0
+MCDC:151,0,t,0,0,<BoolVar b>
+MCDC:151,0,f,0,0,<BoolVar b>
+MCDC:151,0,t,0,1,<BoolVar c>
+MCDC:151,0,f,0,1,<BoolVar c>
 DA:10,1
 DA:18,3
 DA:23,1
@@ -112,8 +128,11 @@ DA:106,2
 DA:111,1
 DA:118,1
 DA:127,1
-BRF:46
-BRH:33
-LF:20
-LH:20
+DA:146,1
+DA:148,1
+DA:151,1
+BRF:54
+BRH:36
+LF:23
+LH:23
 end_of_record

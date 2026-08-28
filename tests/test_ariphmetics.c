@@ -130,6 +130,27 @@ int test_ariphmetic_17(char a)
     return 0;
 }
 
+struct {
+    int a;
+    int b;
+    char c;
+} g_bool_field_test;
+
+bool nop_fn(bool a, int b)
+{
+    return a;
+}
+
+int test_ariphmetic_18(int a)
+{
+    bool b = nop_fn(!!(g_bool_field_test.c & (1 << 2)), a);
+
+    bool c = nop_fn(!!(g_bool_field_test.c & (3 << 2)), a);
+
+
+    return b && c;
+}
+
 int main()
 {
     test_ariphmetic_1(1);
@@ -177,6 +198,8 @@ int main()
     test_ariphmetic_16(2);
 
     test_ariphmetic_17('a');
+
+    test_ariphmetic_18(32);
 
     return 0;
 }
