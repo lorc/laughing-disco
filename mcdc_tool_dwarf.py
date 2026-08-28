@@ -1114,7 +1114,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 #                 state.target_reg, value)
                 adds = instr.mnemonic == "adds"
                 return state.derive(instr_idx=state.instr_idx + 1, partial=False, int_const=value, adds=adds)
-            case "mov":
+            case "mov" | "movz":
                 # match_instr_const_operand(instr, 1, value)
                 return state.derive(instr_idx=state.instr_idx + 1,
                                     target_reg=get_instr_reg_operand(instr, 0),
@@ -1125,7 +1125,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 return state.derive(instr_idx=state.instr_idx + 1,
                                     target_reg=get_instr_reg_operand(instr, 0),
                                     int_const=value)
-            case "ands":
+            case "ands" | "bics":
                 # TODO: See above
                 # match_instr_const_operand(instr, 2, value)
                 return state.derive(instr_idx=state.instr_idx + 1,
@@ -1669,13 +1669,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
             idx = new_state.instr_idx
             # Optional subs/adds:
-            if instructions[idx].mnemonic in ("subs", "adds"):
+            if instructions[idx].mnemonic in ("subs", "adds", "bics", "ands"):
                 idx += 1
             # Optional write to variable
             if instructions[idx].mnemonic in ("str", "stur"):
                 idx += 1
             new_state.instr_idx = idx
-            new_state = ff_to_instruction(new_state, ["b.eq", "b.ne"])
+            new_state = ff_to_instruction(new_state, ["b.eq", "b.ne", "cset", "csel"])
         idx = new_state.instr_idx
         TRACE_MATCH(f"{instructions[idx].mnemonic=}")
         match instructions[idx].mnemonic:
