@@ -1700,7 +1700,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             if instructions[idx].mnemonic in ("str", "stur"):
                 idx += 1
             new_state.instr_idx = idx
-            branches = ["b.eq", "b.ne", "cset", "csel"]
+            branches = ["b.eq", "b.ne", "cset", "csel", "csinc", "cinc", "csetm" ]
             if is_mod_vs_zero_cmp(e):
                 branches += ["b.hi", "b.ls"]
             new_state = ff_to_instruction(new_state, branches)
@@ -1742,7 +1742,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     inverted = not inverted
 
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
-            case "cset" | "csel":
+            case "cset" | "csel" | "csinc" | "cinc" | "csetm":
                 instr = instructions[idx]
                 cc_str = instr.op_str.split(',')[-1].strip().lower()
                 if cc_str == "ne":
