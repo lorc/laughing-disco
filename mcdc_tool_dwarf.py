@@ -1148,6 +1148,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             case mnemonic:
                 if mnemonic in ("cbnz", "cbz", "tbz", "tbnz", "cset"):
                     return state.derive(int_const=value, landed_on_branch=True)
+                if mnemonic == "lsr" and value == 0:
+                    # lsr might be used in 'x < 0' expr, so let caller handle it
+                    return state.derive(int_const=value)
                 raise MatchError(f"Don't know how to handle {mnemonic}")
 
     def handle_variable(operand: SAST, state: MatchState):
