@@ -1470,7 +1470,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         # TODO: Handle differences in LT, LE, GT, GE
         op1_state = handle_operand(e.a, state)
         op1_state = match_optional_store(op1_state)
-        op2_state = handle_operand(e.b, op1_state)
+
+        if isinstance(e.b, NonBoolExpression) and e.b.opcode == "~" \
+        and len(e.b.operands) == 1 and isinstance(e.b.operands[0], IntLiteral):
+            op2_state = handle_int_const(~e.b.operands[0].value, op1_state)
+        else:
+            op2_state = handle_operand(e.b, op1_state)
+
         new_state = op2_state
 
         def cmp_to_imm(instructions, idx) -> bool:
@@ -1582,6 +1588,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     inverted = not inverted
                 match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
+            case "b.eq" if new_state.adds:
+                inverted = not op_is_gt_ge
+                match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                ret.append(TracePoint(instructions[new_state.instr_idx].address,
+                                      inverted, e))
             case "cset" | "csel" | "csinc" | "cinc":
                 # TBD: Match cset condition flags
                 instr = instructions[new_state.instr_idx]
