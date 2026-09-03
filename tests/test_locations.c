@@ -22,6 +22,26 @@ struct dt_device_match {
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
+int test_switch_var_decl(int a, int b)
+{
+	switch (a)
+	{
+		/* No DWARF info for this vars in clang */
+		int test1, test2;
+
+		default:
+			test1 = a / 2;
+			test2 = b / 3;
+
+			if (test1 < test2)
+				return 1;
+
+			break;
+	}
+
+	return 0;
+}
+
 int test_func(int a)
 {
 	if (a)
@@ -42,6 +62,8 @@ int main(void)
 		if (x>3)
 			break;
 	}
+
+	test_switch_var_decl(15, 32);
 
 	if (macro2(macro1(matches)) && x == 0)
 	    return 0;
