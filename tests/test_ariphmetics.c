@@ -151,6 +151,11 @@ int test_ariphmetic_18(int a)
     return b && c;
 }
 
+int test_ariphmetic_19(int a, int b)
+{
+    return b - a < 0;
+}
+
 int main()
 {
     test_ariphmetic_1(1);
@@ -200,6 +205,8 @@ int main()
     test_ariphmetic_17('a');
 
     test_ariphmetic_18(32);
+
+    test_ariphmetic_19(16, 32);
 
     return 0;
 }

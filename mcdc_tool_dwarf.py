@@ -1488,6 +1488,20 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
             return False
 
+        def is_sign_test(e: BoolExpression, instr: capstone.CsInsn) -> bool:
+            """Check whether insns may be testing 'X < 0', by checking sign bit"""
+            if e.op != BoolExpression.OP_LT:
+                return False
+            if not isinstance(e.b, IntLiteral) or e.b.value != 0:
+                return False
+            reg = get_instr_reg_operand(instr, 0)
+            width = 64 if reg.startswith("x") else 32
+            try:
+                match_instr_const_operand(instr, 2, width - 1)
+            except MatchError:
+                return False
+            return True
+
         op_is_gt_ge = (e.op == BoolExpression.OP_GT or e.op == BoolExpression.OP_GE)
 
         new_state = match_optional_store(new_state)
@@ -1569,6 +1583,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 # TBD: Match cset condition flags
                 instr = instructions[new_state.instr_idx]
                 ret.append(TracePoint(instr.address, False, e))
+                return new_state.advance()
+            case "lsr" if is_sign_test(e, instructions[new_state.instr_idx]):
+                if new_state.instr_idx + 1 >= len(instructions):
+                    raise MatchError("Found 'lsr' sign test, can't set tp on next insn")
+                reg = get_instr_reg_operand(instructions[new_state.instr_idx], 0)
+                ret.append(TracePoint(instructions[new_state.instr_idx + 1].address,
+                                            False, e, reg=reg))
                 return new_state.advance()
             case _:
                 raise MatchError(
