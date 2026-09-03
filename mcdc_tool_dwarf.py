@@ -899,6 +899,8 @@ class MatchState:
 
 
 def reg_cmp(r1: str, r2: str):
+    if r1 is None or r2 is None:
+        return False
     if r1.startswith("x") or r1.startswith("w"):
         r1 = r1[1:]
     if r2.startswith("x") or r2.startswith("w"):
