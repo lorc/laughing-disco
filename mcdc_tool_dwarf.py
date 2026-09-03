@@ -1075,11 +1075,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     target_reg = "x0"
                     if instr.mnemonic == "ldr":
                         # Match ldr x8, [sp, #offset] if we saw store to that pos earlier
-                        base_reg = get_instr_operand_offset(instr, 1)
+                        base_reg = get_instr_operand_base_reg(instr, 1)
                         reg_offset = get_instr_operand_offset(instr, 1)
-                        for idx2 in range(idx, 0, -1):
+                        for idx2 in range(idx - 1, max(idx - 4, -1), -1):
                             instr2 = instructions[idx2]
-                            if instr2.mnemonic == "str" and get_instr_operand_offset(
+                            if instr2.mnemonic == "str" and get_instr_operand_base_reg(
                                     instr2, 1) == base_reg and get_instr_operand_offset(
                                         instr2, 1) == reg_offset:
                                 idx += 1
