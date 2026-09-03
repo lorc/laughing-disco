@@ -529,6 +529,17 @@ class VariableInfo:
     frame_base: str
 
 
+@functools.lru_cache
+def _cu_declares_name(cu: CompileUnit, name: str) -> bool:
+    for die in cu.iter_DIEs():
+        if die.tag not in ("DW_TAG_variable", "DW_TAG_formal_parameter"):
+            continue
+        attr = die.attributes.get("DW_AT_name")
+        if attr and attr.value.decode() == name:
+            return True
+    return False
+
+
 def get_variable_at_loc(cu: CompileUnit, addr: int, name: str) -> VariableInfo:
     best_match = None
     for die in cu.get_top_DIE().iter_children():
@@ -1144,6 +1155,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         if not v:
             v = get_global_variable(elf, operand.name)
             if not v:
+                instr = instructions[state.instr_idx]
+                if not _cu_declares_name(cu, operand.name) and \
+                    instr.mnemonic.startswith("ldr"):
+                    TRACE_MATCH(f"No data for {operand.name} in debug info, accepting read at 0x{instr.address:x}")
+                    LAST_SEEN_VAR = operand.name
+                    return state.derive(instr_idx=state.instr_idx + 1,
+                                        target_reg=aarch64_reg_name(instr.operands[0].reg))
                 raise MatchError(
                     f"Can't find variable {operand.name} near address 0x{instructions[state.instr_idx].address:x}"
                 )
