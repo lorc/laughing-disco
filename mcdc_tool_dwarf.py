@@ -1614,7 +1614,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_branch_isntr(instructions[state.instr_idx + 1], "b")
                 ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
                 return state.advance(2)
-            case "csel" | "csinc" | "cset" | "cinc" | "csetm":
+            case "csel" | "csinc" | "cset" | "cinc" | "csetm" | "csinv":
                 instr = instructions[state.instr_idx]
                 cc_str = instr.op_str.split(',')[-1].strip().lower()
                 if cc_str == "eq":
