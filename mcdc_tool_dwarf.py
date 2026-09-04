@@ -1151,6 +1151,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 if mnemonic == "lsr" and value == 0:
                     # lsr might be used in 'x < 0' expr, so let caller handle it
                     return state.derive(int_const=value)
+                if mnemonic == "mvn" and value == 0:
+                    return state.derive(instr_idx=state.instr_idx + 1)
                 raise MatchError(f"Don't know how to handle {mnemonic}")
 
     def handle_variable(operand: SAST, state: MatchState):
@@ -1497,12 +1499,19 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
             return False
 
-        def is_sign_test(e: BoolExpression, instr: capstone.CsInsn) -> bool:
-            """Check whether insns may be testing 'X < 0', by checking sign bit"""
-            if e.op != BoolExpression.OP_LT:
+        def is_sign_test(e: BoolExpression, idx: int) -> bool:
+            """Check whether insns may be testing 'X < 0' or 'x >= 0', by checking sign bit"""
+            if e.op not in (BoolExpression.OP_LT, BoolExpression.OP_GE):
                 return False
             if not isinstance(e.b, IntLiteral) or e.b.value != 0:
                 return False
+
+            has_mvn = idx > 0 and instructions[idx - 1].mnemonic == "mvn"
+            computed_op = BoolExpression.OP_GE if has_mvn else BoolExpression.OP_LT
+            if e.op != computed_op:
+                return False
+
+            instr = instructions[idx]
             reg = get_instr_reg_operand(instr, 0)
             width = 64 if reg.startswith("x") else 32
             try:
@@ -1598,9 +1607,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 instr = instructions[new_state.instr_idx]
                 ret.append(TracePoint(instr.address, False, e))
                 return new_state.advance()
-            case "lsr" if is_sign_test(e, instructions[new_state.instr_idx]):
+            case "lsr" if is_sign_test(e, new_state.instr_idx):
                 if new_state.instr_idx + 1 >= len(instructions):
                     raise MatchError("Found 'lsr' sign test, can't set tp on next insn")
+
                 reg = get_instr_reg_operand(instructions[new_state.instr_idx], 0)
                 ret.append(TracePoint(instructions[new_state.instr_idx + 1].address,
                                             False, e, reg=reg))
