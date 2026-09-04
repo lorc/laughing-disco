@@ -156,6 +156,15 @@ int test_ariphmetic_19(int a, int b)
     return b - a < 0;
 }
 
+int test_ariphmetic_20(int a, int b)
+{
+    while ((a >= 0) && (b >= 0)) {
+        a--;
+        b--;
+    }
+    return 1;
+}
+
 int main()
 {
     test_ariphmetic_1(1);
@@ -207,6 +216,8 @@ int main()
     test_ariphmetic_18(32);
 
     test_ariphmetic_19(16, 32);
+
+    test_ariphmetic_20(2, 3);
 
     return 0;
 }
