@@ -1465,6 +1465,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     if new_state.instr_idx < len(instructions) and \
                        instructions[new_state.instr_idx].mnemonic == "b":
                         new_state.instr_idx += 1
+                    elif new_state.instr_idx + 1 < len(instructions) and \
+                         instructions[new_state.instr_idx].mnemonic == "str" and \
+                         instructions[new_state.instr_idx + 1].mnemonic == "b":
+                        new_state.instr_idx += 2
 
         return new_state
 
