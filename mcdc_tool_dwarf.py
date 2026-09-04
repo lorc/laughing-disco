@@ -1746,11 +1746,21 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
         b_const = isinstance(e.b, IntLiteral)
 
-        new_state = handle_operand(e.a, state)
+        op_a = e.a
+        if isinstance(e.a, BoolExpression) and \
+           e.a.op == BoolExpression.OP_IMPLICIT_CAST:
+            op_a = e.a.a
+
+        op_b = e.b
+        if isinstance(e.b, BoolExpression) and \
+           e.b.op == BoolExpression.OP_IMPLICIT_CAST:
+            op_b = e.b.a
+
+        new_state = handle_operand(op_a, state)
         new_state = match_optional_store(new_state)
         new_state = match_optional_bool_cast(new_state)
         new_state = new_state.derive(landed_on_branch=False)
-        new_state = handle_operand(e.b, new_state)
+        new_state = handle_operand(op_b, new_state)
         if not new_state.landed_on_branch:
             new_state = match_optional_bool_cast(new_state)
 
@@ -1769,10 +1779,16 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             if instructions[idx].mnemonic in ("str", "stur"):
                 idx += 1
             new_state.instr_idx = idx
-            branches = ["b.eq", "b.ne", "cset", "csel", "csinc", "cinc", "csetm" ]
+            branches = ["b.eq", "b.ne"]
             if is_mod_vs_zero_cmp(e):
                 branches += ["b.hi", "b.ls"]
-            new_state = ff_to_instruction(new_state, branches)
+            selects = ["cset", "csel", "csinc", "cinc", "csetm"]
+            search_state = ff_to_instruction(new_state, branches, set(selects))
+            if instructions[search_state.instr_idx].mnemonic in branches:
+                new_state = search_state
+            else:
+                new_state = ff_to_instruction(new_state, selects)
+
         idx = new_state.instr_idx
         TRACE_MATCH(f"{instructions[idx].mnemonic=}")
         match instructions[idx].mnemonic:
