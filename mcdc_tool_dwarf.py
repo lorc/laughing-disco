@@ -420,7 +420,7 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
         if _addr_inside_inlines(inlines, next_expr.end_addr):
             for inline in inlines:
                 if _addr_inside_inline(
-                        inline, next_expr.end_addr) and inline.high_addr > next_expr.end_addr:
+                        inline, next_expr.end_addr) and inline.high_addr >= next_expr.end_addr:
                     next_expr.end_addr = inline.high_addr + 16
                     TRACE_CU(f"Extending end of expr to {next_expr.end_addr:x}")
         try:
