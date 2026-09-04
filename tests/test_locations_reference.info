@@ -2,8 +2,8 @@ TN:MCDC_Test_Report
 SF:tests/test_locations.c
 BRDA:36,0,0,1
 BRDA:36,0,1,0
-MCDC:36,0,t,0,0,(<NonBoolVar (int)test1> LT <NonBoolVar (int)test2>)
-MCDC:36,0,f,0,0,(<NonBoolVar (int)test1> LT <NonBoolVar (int)test2>)
+MCDC:36,0,t,0,0,(<NonBoolVar (int)c> LT <NonBoolVar (int)d>)
+MCDC:36,0,f,0,0,(<NonBoolVar (int)c> LT <NonBoolVar (int)d>)
 BRDA:47,0,0,-
 BRDA:47,0,1,-
 MCDC:47,0,t,0,0,<NonBoolVar (int)a>
