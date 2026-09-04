@@ -27,13 +27,13 @@ int test_switch_var_decl(int a, int b)
 	switch (a)
 	{
 		/* No DWARF info for this vars in clang */
-		int test1, test2;
+		int c, d;
 
 		default:
-			test1 = a / 2;
-			test2 = b / 3;
+			c = a / 2;
+			d = b / 3;
 
-			if (test1 < test2)
+			if (c < d)
 				return 1;
 
 			break;

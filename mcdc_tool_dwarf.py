@@ -530,13 +530,20 @@ class VariableInfo:
 
 
 @functools.lru_cache
-def _cu_declares_name(cu: CompileUnit, name: str) -> bool:
+def _func_declares_name(cu: CompileUnit, addr: int, name: str) -> bool:
+    """Check whether the function covering 'addr' declares 'name' itself."""
+
+    target_func = False
     for die in cu.iter_DIEs():
-        if die.tag not in ("DW_TAG_variable", "DW_TAG_formal_parameter"):
-            continue
-        attr = die.attributes.get("DW_AT_name")
-        if attr and attr.value.decode() == name:
-            return True
+        if die.tag == "DW_TAG_subprogram":
+            target_func = "DW_AT_low_pc" in die.attributes and \
+                     "DW_AT_high_pc" in die.attributes and \
+                     any(r.low_pc <= addr <= r.high_pc
+                         for r in _simple_range_to_ranges(die))
+        elif target_func and die.tag in ("DW_TAG_variable", "DW_TAG_formal_parameter"):
+            attr = die.attributes.get("DW_AT_name")
+            if attr and attr.value == name:
+                return True
     return False
 
 
@@ -1163,7 +1170,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             v = get_global_variable(elf, operand.name)
             if not v:
                 instr = instructions[state.instr_idx]
-                if not _cu_declares_name(cu, operand.name) and \
+                if not _func_declares_name(cu, instr.address, operand.name) and \
                     instr.mnemonic.startswith("ldr"):
                     TRACE_MATCH(f"No data for {operand.name} in debug info, accepting read at 0x{instr.address:x}")
                     LAST_SEEN_VAR = operand.name
