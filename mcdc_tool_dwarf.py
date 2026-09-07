@@ -1733,6 +1733,19 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 ret.append(TracePoint(instructions[state.instr_idx].address,
                                       cond == "eq", e.a))
                 return state.advance().derive(partial=True)
+            case "mvn":
+                instr = instructions[state.instr_idx]
+                dst = get_instr_reg_operand(instr, 0)
+                for idx in range(state.instr_idx + 1, min(state.instr_idx + 4,
+                                                          len(instructions))):
+                    if instructions[idx].mnemonic == "ubfiz" and \
+                       reg_cmp(get_instr_reg_operand(instructions[idx], 1), dst):
+                        break
+                else:
+                    raise MatchError(f"Expected ubfiz of {dst} after mvn (OP_NOT)")
+                reg = get_instr_reg_operand(instr, 1)
+                ret.append(TracePoint(instr.address, False, e.a, reg=reg))
+                return state.advance(2).derive(partial=True)
             case mnemonic:
                 raise MatchError(f"Don't know how to handle {mnemonic} (OP_NOT)")
         return state
