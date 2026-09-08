@@ -1653,6 +1653,17 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 raise MatchError(f"Don't know how to handle {mnemonic} (OP_NOT)")
         return state
 
+    def is_mod_vs_zero_cmp(e: BoolExpression) -> bool:
+        """True for 'x % K == 0' and 'x % K != 0' where K is constant"""
+        for mod, zero in ((e.a, e.b), (e.b, e.a)):
+            if not isinstance(mod, NonBoolExpression) or mod.opcode != "%":
+                continue
+            if len(mod.operands) < 2 or not isinstance(mod.operands[1], IntLiteral):
+                continue
+            if isinstance(zero, IntLiteral) and zero.value == 0:
+                return True
+        return False
+
     def handle_eq_xor(e: BoolExpression, state: MatchState) -> MatchState:
         inverted: bool = e.op == BoolExpression.OP_XOR
         # TODO: Special case: a == a
@@ -1689,10 +1700,18 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             if instructions[idx].mnemonic in ("str", "stur"):
                 idx += 1
             new_state.instr_idx = idx
-            new_state = ff_to_instruction(new_state, ["b.eq", "b.ne", "cset", "csel"])
+            branches = ["b.eq", "b.ne", "cset", "csel"]
+            if is_mod_vs_zero_cmp(e):
+                branches += ["b.hi", "b.ls"]
+            new_state = ff_to_instruction(new_state, branches)
         idx = new_state.instr_idx
         TRACE_MATCH(f"{instructions[idx].mnemonic=}")
         match instructions[idx].mnemonic:
+            case "b.hi" | "b.ls" if is_mod_vs_zero_cmp(e):
+                match_branch_isntr(instructions[idx + 1], "b")
+                if instructions[idx].mnemonic == "b.hi":
+                    inverted = not inverted
+                ret.append(TracePoint(instructions[idx].address, inverted, e))
             case "b.eq":
                 match_branch_isntr(instructions[idx + 1], "b")
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
