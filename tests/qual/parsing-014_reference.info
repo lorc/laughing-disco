@@ -1,1 +1,12 @@
 TN:MCDC_Test_Report
+SF:tests/qual/parsing-014.c
+BRDA:26,0,0,0
+BRDA:26,0,1,1
+MCDC:26,0,t,0,0,(<NonBoolVar (const int)_x> LT <NonBoolVar (const int)_y>)
+MCDC:26,0,f,0,0,(<NonBoolVar (const int)_x> LT <NonBoolVar (const int)_y>)
+DA:26,1
+BRF:2
+BRH:1
+LF:1
+LH:1
+end_of_record
