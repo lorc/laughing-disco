@@ -4,9 +4,14 @@ BRDA:27,0,0,1
 BRDA:27,0,1,0
 MCDC:27,0,t,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
 MCDC:27,0,f,0,0,(<NonBoolVar (int)x> EQ <IntLiteral 3>)
+BRDA:38,0,0,0
+BRDA:38,0,1,1
+MCDC:38,0,t,0,0,(<NonBoolVar (const int)_x> LT <NonBoolVar (const int)_y>)
+MCDC:38,0,f,0,0,(<NonBoolVar (const int)_x> LT <NonBoolVar (const int)_y>)
 DA:27,1
-BRF:2
-BRH:1
-LF:1
-LH:1
+DA:38,1
+BRF:4
+BRH:2
+LF:2
+LH:2
 end_of_record

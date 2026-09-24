@@ -437,7 +437,14 @@ def handle_expression(ast: ASTEntry) -> SAST:
                     raise Exception(f"Unexpected amount of inner entries: {len(ast.inner)}")
                 return StatementExpression(ast.get_loc(), recurse(ast.inner[0]), ast)
             case "CompoundStmt":
-                return CompoundStmt(ast.get_loc(), [recurse(inner) for inner in ast.inner], ast)
+                stmts = []
+                for inner in ast.inner:
+                    try:
+                        stmts.append(recurse(inner))
+                    except Nope as e:
+                        print(f"Got Nope for statement {inner.get_loc()} ({e})")
+                        stmts.append(NullOp(inner.get_loc(), inner))
+                return CompoundStmt(ast.get_loc(), stmts, ast)
             case "ReturnStmt":
                 return MiscExpr(ast.get_loc(), ast, [recurse(inner) for inner in ast.inner])
 
