@@ -80,7 +80,16 @@ class DwarfLoc:
 def parse_locs(cu, sfilelocs: list[SFileLocMap]) -> list[DwarfLoc]:
     ret: list[LineState] = list()
     lp: LineProgram = cu.dwarfinfo.line_program_for_CU(cu)
-    fnames = [x["DW_LNCT_path"].decode() for x in lp["file_names"]]
+    dirs = [d.decode() for d in lp["include_directory"]]
+
+    def _file_path(entry) -> str:
+        path = entry["DW_LNCT_path"].decode()
+        directory = dirs[entry["DW_LNCT_directory_index"]]
+        if os.path.isabs(path) or os.path.isabs(directory):
+            return path
+        return os.path.join(directory, path)
+
+    fnames = [_file_path(x) for x in lp["file_names"]]
     lp_entries = lp.get_entries()
     for lp_entry in lp_entries:
         if lp_entry.state:
