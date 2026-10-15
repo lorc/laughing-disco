@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 import itertools
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from mcdc_tool_s_loc import SFileLocMap
 
@@ -872,3 +872,35 @@ class MCDCExprInfo:
     compile_unit: str
     expressions: list[SAST]
     inline_info: list[SFileLocMap]
+
+
+@dataclass
+class BBInfo:
+    compile_unit: str
+    function_blocks: list[FunctionBlocks]
+
+
+@dataclass
+class BasicBlock:
+    ast: ASTEntry
+    type: str
+    next: BasicBlock = None
+    alt: BasicBlock = None
+    insns: list = None
+    id: uuid.UUID = field(default_factory=uuid.uuid4)
+    def __repr__(self) -> str:
+        add = ""
+        if self.insns:
+            add = f"@{self.insns[0].address:x}"
+        if self.next and self.next.insns:
+            add += f" next=@{self.next.insns[0].address:x}"
+        if self.alt and self.alt.insns:
+            add += f" alt=@{self.alt.insns[0].address:x}"
+        return f"<BasicBlock '{self.type}{add}'>"
+
+
+@dataclass
+class FunctionBlocks:
+    ast: ASTEntry
+    function_name: str
+    root_block: BasicBlock
