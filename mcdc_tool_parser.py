@@ -419,7 +419,23 @@ def handle_expression(ast: ASTEntry) -> SAST:
             case "ArraySubscriptExpr":
                 return ArraySubscript(ast.get_loc(), recurse(ast.inner[0]),
                                    recurse(ast.inner[1]), ast)
-            case "IfStmt" | "WhileStmt" | "ConditionalOperator" | "BinaryConditionalOperator":
+            case "IfStmt":
+                cond = recurse(ast.inner[0])
+                if cond.is_const():
+                    # In case of const value in 'if' statement, compiler
+                    # won't generate code for the unreachable side, so don't
+                    # add it to expression list
+                    if cond.get_const_val():
+                        leaf = 1
+                    else:
+                        leaf = 2
+                    rest = [recurse(ast.inner[leaf])] if leaf < len(ast.inner) else []
+                else:
+                    rest = [recurse(inner) for inner in ast.inner[1:]]
+
+                return FlowControlStructure(ast.get_loc(), cond, rest, ast)
+
+            case "WhileStmt" | "ConditionalOperator" | "BinaryConditionalOperator":
                 rest = [recurse(inner) for inner in ast.inner[1:]]
                 return FlowControlStructure(ast.get_loc(), recurse(ast.inner[0]), rest, ast)
             case "DoStmt":
