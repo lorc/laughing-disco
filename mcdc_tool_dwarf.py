@@ -68,9 +68,10 @@ class DwarfInlinedFunc:
 
 class DwarfLoc:
 
-    def __init__(self, fname: str, lp_state: LineState):
+    def __init__(self, fname: str, lp_state: LineState, seq: int = 0):
         self.fname = fname
         self.lp_state = lp_state
+        self.seq = seq
         self.inlines: list[SFileLoc] = []
 
     def __repr__(self) -> str:
@@ -79,6 +80,7 @@ class DwarfLoc:
 
 def parse_locs(cu, sfilelocs: list[SFileLocMap]) -> list[DwarfLoc]:
     ret: list[LineState] = list()
+    seq = 0
     lp: LineProgram = cu.dwarfinfo.line_program_for_CU(cu)
     dirs = [d.decode() for d in lp["include_directory"]]
 
@@ -94,7 +96,7 @@ def parse_locs(cu, sfilelocs: list[SFileLocMap]) -> list[DwarfLoc]:
     for lp_entry in lp_entries:
         if lp_entry.state:
             state = lp_entry.state
-            loc = DwarfLoc(fnames[state.file], state)
+            loc = DwarfLoc(fnames[state.file], state, seq)
 
             # Augment with inline data
             for sl in sfilelocs:
@@ -110,6 +112,8 @@ def parse_locs(cu, sfilelocs: list[SFileLocMap]) -> list[DwarfLoc]:
                     break
 
             ret.append(loc)
+            if state.end_sequence:
+                seq += 1
     return ret
 
 
@@ -335,7 +339,7 @@ def _get_addr_ranges_for_expr(expr: SAST, locations: list[DwarfLoc],
         for idx, loc in enumerate(locations):
             if _loc_is_in_expr(expr, loc):
                 # Always update end_loc
-                if idx + 1 < len(locations):
+                if idx + 1 < len(locations) and locations[idx + 1].seq == loc.seq:
                     end_loc = locations[idx + 1]
                 else:
                     end_loc = locations[idx]
