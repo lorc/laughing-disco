@@ -730,7 +730,7 @@ class FCall(SAST):
         self._is_const = False
 
         match self._str_name():
-            case "is_pv_domain":
+            case "is_pv_domain" | "__builtin_constant_p":
                 self._is_const = True
                 self._bool_const_val = False
 
