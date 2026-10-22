@@ -432,6 +432,7 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
                         inline, next_expr.end_addr) and inline.high_addr >= next_expr.end_addr:
                     next_expr.end_addr = inline.high_addr + 16
                     TRACE_CU(f"Extending end of expr to {next_expr.end_addr:x}")
+        data = None
         try:
             data = get_code_for_range(elffile, next_expr.start_addr, next_expr.end_addr)
         except Exception:
@@ -440,6 +441,7 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
         if not data:
             global ELF_RANGE_FAIL_CNT
             ELF_RANGE_FAIL_CNT += 1
+            continue
 
 
 #            raise Exception(f"Can't get data for expr {next_expr}")
