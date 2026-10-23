@@ -1168,7 +1168,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 return state.derive(instr_idx=state.instr_idx + 1,
                                     target_reg=get_instr_reg_operand(instr, 0),
                                     int_const=value)
-            case "asr":
+            case "lsr" if value == 0:
+                # Comparison against zero: this is the sign test of 'x < 0'.
+                # Leave the 'lsr' in place for the caller's is_sign_test().
+                return state.derive(int_const=value)
+            case "lsr" | "asr":
                 # TODO: See above
                 # match_instr_const_operand(instr, 2, value)
                 return state.derive(instr_idx=state.instr_idx + 1,
@@ -1183,9 +1187,6 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             case mnemonic:
                 if mnemonic in ("cbnz", "cbz", "tbz", "tbnz", "cset"):
                     return state.derive(int_const=value, landed_on_branch=True)
-                if mnemonic == "lsr" and value == 0:
-                    # lsr might be used in 'x < 0' expr, so let caller handle it
-                    return state.derive(int_const=value)
                 if mnemonic == "mvn" and value == 0:
                     return state.derive(instr_idx=state.instr_idx + 1)
                 raise MatchError(f"Don't know how to handle {mnemonic}")
