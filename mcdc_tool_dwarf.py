@@ -336,8 +336,21 @@ def _get_addr_ranges_for_expr(expr: SAST, locations: list[DwarfLoc],
                 ret.extend(r)
     else:
         # Easy mode
+
+        # Find the sequence of the first row that matches the expression
+        # by its own file/line/column. A row that matches only through inline
+        # origin data may belong to another copy of the code
+        expr_seq = None
+        for loc in locations:
+            if _file_line_col_in_expr(expr, loc.fname, loc.lp_state.line,
+                                      loc.lp_state.column):
+                expr_seq = loc.seq
+                break
+
         for idx, loc in enumerate(locations):
             if _loc_is_in_expr(expr, loc):
+                if expr_seq is not None and loc.seq != expr_seq:
+                    continue
                 # Always update end_loc
                 if idx + 1 < len(locations) and locations[idx + 1].seq == loc.seq:
                     end_loc = locations[idx + 1]
