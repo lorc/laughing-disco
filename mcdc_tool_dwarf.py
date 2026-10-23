@@ -1168,6 +1168,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 return state.derive(instr_idx=state.instr_idx + 1,
                                     target_reg=get_instr_reg_operand(instr, 0),
                                     int_const=value)
+            case "ubfx" if value == 0:
+                # Bitfield compared against zero
+                return state.derive(int_const=value)
             case "lsr" if value == 0:
                 # Comparison against zero: this is the sign test of 'x < 0'.
                 # Leave the 'lsr' in place for the caller's is_sign_test().
@@ -1891,6 +1894,16 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     ret.append(TracePoint(instr.address, not inverted, e))
                 else:
                     ret.append(TracePoint(instr.address, inverted, e))
+                return new_state.derive(instr_idx=idx + 1)
+            case "ubfx":
+                # ubfx is used in conditions with bitfield comparsions with '0',
+                # so watch its destination on the next insn.
+                match_instr_const_operand(instructions[idx], 3, 1)
+                if idx + 1 >= len(instructions):
+                    raise MatchError("Can't set tracepoint on ubfx, no next instr")
+                reg = get_instr_reg_operand(instructions[idx], 0)
+                ret.append(TracePoint(instructions[idx + 1].address, not inverted,
+                                      e, reg=reg))
                 return new_state.derive(instr_idx=idx + 1)
             case _:
                 raise MatchError(
