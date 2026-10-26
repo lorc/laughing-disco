@@ -11,7 +11,8 @@ TEST_SRCS = \
 	tests/test_goto.c \
 	tests/test_locations.c \
 	tests/test_complex_statement_expr.c \
-	tests/test_bitfields.c
+	tests/test_bitfields.c \
+	tests/test_include_first.c
 
 QUALIFICATION_TESTS = \
 	tests/qual/basics-001.c \
@@ -79,11 +80,24 @@ CFLAGS += -std=gnu99 -fno-common -fno-builtin -mgeneral-regs-only
 
 all: $(TEST_BINS) $(MCDC_PICKLES) $(DWARF_PICKLES) $(PLUGIN_CONFS)
 
-tests/%.o tests/%_compile_commands.json: tests/%.c Makefile
-	bear --output tests/$*_compile_commands.json -- clang $(CFLAGS) -c $< -o $@
+# Tests normally contain one CU. A test that needs more need list them
+# in <test>_EXTRA_SRCS: they will be compiled into the same compile_commands.json
+# and linked into the same binary
+test_include_first_EXTRA_SRCS = tests/test_include_second.c
 
-tests/%: tests/%.o
-	clang $(CFLAGS) -static $< -o $@
+.SECONDEXPANSION:
+
+tests/%.o tests/%_compile_commands.json: tests/%.c $$($$*_EXTRA_SRCS) Makefile
+	rm -f tests/$*_compile_commands.json
+	bear --output tests/$*_compile_commands.json -- \
+		clang $(CFLAGS) -c $< -o tests/$*.o
+	for src in $($*_EXTRA_SRCS); do \
+		bear --output tests/$*_compile_commands.json --append -- \
+			clang $(CFLAGS) -c $$src -o $${src%.c}.o || exit 1; \
+	done
+
+tests/%: tests/%.o $$(subst .c,.o,$$($$*_EXTRA_SRCS))
+	clang $(CFLAGS) -static $^ -o $@
 
 tests/%_mcdc.pickle: tests/%.o mcdc_tool_parser.py mcdc_tool_definitions.py
 	python mcdc_tool_parser.py tests/$*_mcdc.pickle tests/$*_compile_commands.json

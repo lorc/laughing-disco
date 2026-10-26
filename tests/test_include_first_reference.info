@@ -1,0 +1,47 @@
+TN:MCDC_Test_Report
+SF:tests/test_include.h
+BRDA:9,0,0,1
+BRDA:9,0,1,1
+BRDA:9,0,2,1
+BRDA:9,0,3,0
+MCDC:9,0,t,1,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+MCDC:9,0,f,1,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+MCDC:9,0,t,0,1,(<NonBoolVar (int)b> GT <IntLiteral 0>)
+MCDC:9,0,f,0,1,(<NonBoolVar (int)b> GT <IntLiteral 0>)
+BRDA:14,0,0,1
+BRDA:14,0,1,1
+MCDC:14,0,t,1,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+MCDC:14,0,f,1,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+DA:9,2
+DA:14,2
+BRF:6
+BRH:5
+LF:2
+LH:2
+end_of_record
+SF:tests/test_include_first.c
+BRDA:25,0,0,1
+BRDA:25,0,1,1
+BRDA:25,0,2,1
+BRDA:25,0,3,0
+MCDC:25,0,t,1,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+MCDC:25,0,f,1,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+MCDC:25,0,t,0,1,(<NonBoolVar (int)a> LT <IntLiteral 10>)
+MCDC:25,0,f,0,1,(<NonBoolVar (int)a> LT <IntLiteral 10>)
+DA:25,2
+BRF:4
+BRH:3
+LF:1
+LH:1
+end_of_record
+SF:tests/test_include_second.c
+BRDA:18,0,0,1
+BRDA:18,0,1,0
+MCDC:18,0,t,0,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+MCDC:18,0,f,0,0,(<NonBoolVar (int)a> GT <IntLiteral 0>)
+DA:18,1
+BRF:2
+BRH:1
+LF:1
+LH:1
+end_of_record

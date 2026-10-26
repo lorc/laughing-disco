@@ -8,5 +8,5 @@
 *.i
 *.ll
 *.info
-
-
+# reference reports are used by 'make check'
+!tests/**/*_reference.info
