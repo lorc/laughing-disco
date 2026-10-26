@@ -132,18 +132,24 @@ def parse_brtrace(trace_file: str) -> Dict[str, List[Dict[str, Any]]]:
     return conditions
 
 
-def load_dwarf_data(dwarf_pickle_file) -> dict[str, List[ExprTraceInfo]]:
+def _expr_key(expr: Any) -> Tuple:
+    """Identifies a source decision independently of the CU it came from."""
+    loc = getattr(expr, 'loc', None)
+    return (getattr(loc, 'file', None), getattr(loc, 'line', None),
+            getattr(loc, 'col', None), str(expr))
+
+
+def load_dwarf_data(dwarf_pickle_file) -> dict[Tuple, List[ExprTraceInfo]]:
     with open(dwarf_pickle_file, "rb") as f:
         dwarf_infos = pickle.load(f)
 
     dwarf_map = defaultdict(list)
     for info in dwarf_infos:
-        dwarf_map[info.expr.uuid].append(info)
+        dwarf_map[_expr_key(info.expr)].append(info)
     return dwarf_map
 
 
 def _evaluate_test_vectors(
-    uuid_str: str,
     variants: List[Dict[str, Any]],
     expr: Any,
     leafs: List[Any],
@@ -197,9 +203,9 @@ def _evaluate_test_vectors(
     return list(unique_test_vectors.values())
 
 
-def _print_diag(uuid_str: str, test_vectors: List['TestVector']):
-    """Prints bitmask and outcome diagnostics for a specific UUID."""
-    print(f"\n[ DEBUG ] Evaluated Vectors for UUID: {uuid_str}")
+def _print_diag(expr: Any, test_vectors: List['TestVector']):
+    """Prints bitmask and outcome diagnostics for a specific decision."""
+    print(f"\n[ DEBUG ] Evaluated Vectors for {getattr(expr, 'loc', None)}")
     for idx, t in enumerate(test_vectors, 1):
         print(
             f"  -> TestVec {idx:2d} | Val Mask: {t.val:04b} | "
@@ -303,32 +309,34 @@ def _find_branch_hits(
 
 def process_mcdc_coverage(
     trace_data: Dict[str, Any],
-    dwarf_map: Dict[str, List[Any]]
+    dwarf_map: Dict[Tuple, List[Any]]
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
     Evaluates coverage by mapping QEMU traces to DWARF AST representations.
     """
     file_coverage = defaultdict(list)
 
-    for uuid_str, dwarf_info_list in dwarf_map.items():
-        variants = trace_data.get(uuid_str, [])
-
-        expr = dwarf_info_list[0].expr
+    for dwarf_infos in dwarf_map.values():
+        expr = dwarf_infos[0].expr
 
         leafs = expr.get_leafs()
         polarities = _leaf_polarities(expr, leafs)
 
+        variants = []
+        for uuid_str in {info.expr.uuid for info in dwarf_infos}:
+            variants.extend(trace_data.get(uuid_str, []))
+
         addr_map = {}
-        for dwarf_info in dwarf_info_list:
+        for dwarf_info in dwarf_infos:
             for idx, tp in enumerate(dwarf_info.trace_points):
                 addr_map[tp.addr] = (idx, tp)
 
         try:
             test_vectors = _evaluate_test_vectors(
-                uuid_str, variants, expr, leafs, addr_map
+                variants, expr, leafs, addr_map
             )
 
-            _print_diag(uuid_str, test_vectors)
+            _print_diag(expr, test_vectors)
 
             pairs_found = _find_mcdc_pairs(test_vectors, leafs)
 
