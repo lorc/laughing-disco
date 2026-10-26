@@ -1,6 +1,7 @@
 import struct
 import argparse
 import pickle
+import logging
 from collections import defaultdict
 from typing import Dict, List, Tuple, Any
 
@@ -36,6 +37,8 @@ COND_BRANCH_HEADER_SIZE = struct.calcsize(COND_BRANCH_HEADER_FMT)
 PENDING_COND_ENTRY_FMT = '<QB'
 PENDING_COND_ENTRY_SIZE = struct.calcsize(PENDING_COND_ENTRY_FMT)
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 def _validate_header(file_handle) -> int:
     """
@@ -205,14 +208,14 @@ def _evaluate_test_vectors(
 
 def _print_diag(expr: Any, test_vectors: List['TestVector']):
     """Prints bitmask and outcome diagnostics for a specific decision."""
-    print(f"\n[ DEBUG ] Evaluated Vectors for {getattr(expr, 'loc', None)}")
+    log.debug(f"\n[ DEBUG ] Evaluated Vectors for {getattr(expr, 'loc', None)}")
     for idx, t in enumerate(test_vectors, 1):
-        print(
+        log.debug(
             f"  -> TestVec {idx:2d} | Val Mask: {t.val:04b} | "
             f"Eval Mask: {t.eval:04b} | Outcome: {t.outcome} "
             f"(Exit: 0x{t.exit:x})"
         )
-    print("-" * 60)
+    log.debug("-" * 60)
 
 def _find_mcdc_pairs(
     test_vectors: List['TestVector'],
@@ -486,6 +489,8 @@ def _merge_trace_data(trace_files: List[str]) -> Dict[str, List[Any]]:
 
 def main():
     args = _parse_arguments()
+
+    logging.basicConfig(level=logging.INFO)
 
     print("[*] Loading DWARF TracePoints for AST Resolution...")
     dwarf_map = load_dwarf_data(args.dwarf)
