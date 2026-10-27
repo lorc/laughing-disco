@@ -311,125 +311,143 @@ static void vcpu_exec_cb(unsigned int vcpu_index, void *data)
     g_bytes_unref(lookup_bytes);
 }
 
+/*
+ * Decodes the instruction for a trace point for the first time it is seen,
+ * and registers execution callback on it
+ */
+static void register_trace_point(struct qemu_plugin_insn *insn,
+                                   uint64_t insn_vaddr, BranchExecData *data)
+{
+    uint32_t raw_opcode, opcode;
+    int32_t offset;
+    size_t data_size;
+
+    if (data->is_decoded) {
+        qemu_plugin_register_vcpu_insn_exec_cb(insn, vcpu_exec_cb,
+                                               QEMU_PLUGIN_CB_RW_REGS, data);
+        return;
+    }
+
+    data_size = qemu_plugin_insn_data(insn, &raw_opcode, sizeof(raw_opcode));
+    if (data_size < sizeof(raw_opcode)) {
+        return;
+    }
+
+    opcode = GUINT32_FROM_LE(raw_opcode);
+
+    g_mutex_lock(&trace_lock);
+
+    if ((opcode & BC_OPCODE_MASK) == BC_OPCODE) {
+        data->branch_type = BR_COND;
+        data->cond_code  = opcode & 0x0F;
+
+        offset = (opcode >> 5) & 0x7FFFF;
+        if (offset & 0x40000) {
+            offset |= 0xFFF80000;
+        }
+
+        data->target_addr = insn_vaddr + (offset * 4);
+    } else if ((opcode & CB_OPCODE_MASK) == CB_OPCODE) {
+        data->branch_type = ((opcode >> 24) & 1) ? BR_CBNZ : BR_CBZ;
+        data->is_64bit   = (opcode >> 31) & 1;
+        data->reg_idx    = opcode & 0x1F;
+
+        offset = (opcode >> 5) & 0x7FFFF;
+        if (offset & 0x40000) {
+            offset |= 0xFFF80000;
+        }
+
+        data->target_addr = insn_vaddr + (offset * 4);
+    } else if ((opcode & CB_OPCODE_MASK) == TB_OPCODE) {
+        uint8_t b5 = (opcode >> 31) & 1;
+        uint8_t b40 = (opcode >> 19) & 0x1F;
+
+        data->bit_pos = (b5 << 5) | b40;
+        data->branch_type = ((opcode >> 24) & 1) ? BR_TBNZ : BR_TBZ;
+        data->reg_idx    = opcode & 0x1F;
+
+        offset = (opcode >> 5) & 0x3FFF;
+        if (offset & 0x2000) {
+            offset |= 0xFFFFC000;
+        }
+
+        data->target_addr = insn_vaddr + (offset * 4);
+    } else if ((opcode & CSEL_OPCODE_MASK) == CSEL_OPCODE) {
+        uint32_t rn = RN(opcode);
+        uint32_t rm = RM(opcode);
+
+        uint32_t op2 = (opcode >> 10) & 0x3;
+
+        data->branch_type = BR_CSEL;
+        data->cond_code  = (opcode >> 12) & 0x0F;
+
+        /*
+         * Handle aliases CSET, CINC and others:
+         * 'CSET  Xd, cond' -> 'CSINC Xd, XZR, XZR, invert(cond)'
+         * 'CINC  Xd, Xn, cond' -> 'CSINC Xd, Xn, Xn, invert(cond)'
+         *
+         * op2 == 0: CSEL  (Standard select, no inversion)
+         * op2 == 1: CSINC (Aliases: CSET, CINC)
+         * op2 == 2: CSINV (Aliases: CSETM, CINV)
+         * op2 == 3: CSNEG (Aliases: CNEG)
+         */
+        bool has_alias = (op2 != 0);
+
+        if (has_alias && rn == rm) {
+            data->cond_code = data->cond_code ^ 0x1;
+        }
+
+        data->target_addr = insn_vaddr + 4;
+    } else if ((opcode & STR_IMM_MASK) == STR_IMM_VAL ||
+               (opcode & STUR_MASK) == STUR_VAL ||
+               (opcode & STR_REG_MASK) == STR_REG_VAL) {
+
+        data->branch_type = BR_PSEUDO_REG_WATCH;
+        data->reg_idx = RT(opcode);
+
+        data->is_64bit = ((opcode >> 30) & 0x3) == 3;
+
+        data->target_addr = insn_vaddr + 4;
+
+    } else if (data->reg_idx != NO_REG_WATCH) {
+        data->branch_type = BR_PSEUDO_REG_WATCH;
+        data->target_addr = insn_vaddr + 4;
+    } else {
+        fprintf(stderr,
+                "[ERROR] Configured addr 0x%lx is not a branch and has no register attached!\n",
+                insn_vaddr);
+        g_mutex_unlock(&trace_lock);
+        return;
+    }
+
+    data->is_decoded = true;
+
+    qemu_plugin_register_vcpu_insn_exec_cb(insn, vcpu_exec_cb,
+                                           QEMU_PLUGIN_CB_RW_REGS, data);
+    g_mutex_unlock(&trace_lock);
+}
+
 static void vcpu_tb_trans_cb(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
 {
     for(int i = 0; i < qemu_plugin_tb_n_insns(tb); i++) {
-        uint32_t raw_opcode, opcode;
         struct qemu_plugin_insn *insn = qemu_plugin_tb_get_insn(tb, i);
         uint64_t insn_vaddr = qemu_plugin_insn_vaddr(insn);
-        int32_t offset;
-        size_t data_size;
 
-        BranchExecData *data = g_hash_table_lookup(target_instructions,
-                                                   &insn_vaddr);
-        if (!data) {
+        /*
+         * One instruction can be the trace point of several conditions.
+         * Each condition gets its own callback, so that vcpu_exec_cb keeps the
+         * evaluations of each uuid separate.
+         */
+        GPtrArray *trace_points = g_hash_table_lookup(target_instructions,
+                                                      &insn_vaddr);
+        if (!trace_points) {
             continue;
         }
 
-        if (data->is_decoded) {
-            qemu_plugin_register_vcpu_insn_exec_cb(insn, vcpu_exec_cb,
-                                                   QEMU_PLUGIN_CB_RW_REGS, data);
-            continue;
+        for (int j = 0; j < trace_points->len; j++) {
+            register_trace_point(insn, insn_vaddr,
+                                 g_ptr_array_index(trace_points, j));
         }
-
-        data_size = qemu_plugin_insn_data(insn, &raw_opcode, sizeof(raw_opcode));
-        if (data_size < sizeof(raw_opcode)) {
-            continue;
-        }
-
-        opcode = GUINT32_FROM_LE(raw_opcode);
-
-        g_mutex_lock(&trace_lock);
-
-        if ((opcode & BC_OPCODE_MASK) == BC_OPCODE) {
-            data->branch_type = BR_COND;
-            data->cond_code  = opcode & 0x0F;
-
-            offset = (opcode >> 5) & 0x7FFFF;
-            if (offset & 0x40000) {
-                offset |= 0xFFF80000;
-            }
-
-            data->target_addr = insn_vaddr + (offset * 4);
-        } else if ((opcode & CB_OPCODE_MASK) == CB_OPCODE) {
-            data->branch_type = ((opcode >> 24) & 1) ? BR_CBNZ : BR_CBZ;
-            data->is_64bit   = (opcode >> 31) & 1;
-            data->reg_idx    = opcode & 0x1F;
-
-            offset = (opcode >> 5) & 0x7FFFF;
-            if (offset & 0x40000) {
-                offset |= 0xFFF80000;
-            }
-
-            data->target_addr = insn_vaddr + (offset * 4);
-        } else if ((opcode & CB_OPCODE_MASK) == TB_OPCODE) {
-            uint8_t b5 = (opcode >> 31) & 1;
-            uint8_t b40 = (opcode >> 19) & 0x1F;
-
-            data->bit_pos = (b5 << 5) | b40;
-            data->branch_type = ((opcode >> 24) & 1) ? BR_TBNZ : BR_TBZ;
-            data->reg_idx    = opcode & 0x1F;
-
-            offset = (opcode >> 5) & 0x3FFF;
-            if (offset & 0x2000) {
-                offset |= 0xFFFFC000;
-            }
-
-            data->target_addr = insn_vaddr + (offset * 4);
-        } else if ((opcode & CSEL_OPCODE_MASK) == CSEL_OPCODE) {
-            uint32_t rn = RN(opcode);
-            uint32_t rm = RM(opcode);
-
-            uint32_t op2 = (opcode >> 10) & 0x3;
-
-            data->branch_type = BR_CSEL;
-            data->cond_code  = (opcode >> 12) & 0x0F;
-
-            /*
-             * Handle aliases CSET, CINC and others:
-             * 'CSET  Xd, cond' -> 'CSINC Xd, XZR, XZR, invert(cond)'
-             * 'CINC  Xd, Xn, cond' -> 'CSINC Xd, Xn, Xn, invert(cond)'
-             *
-             * op2 == 0: CSEL  (Standard select, no inversion)
-             * op2 == 1: CSINC (Aliases: CSET, CINC)
-             * op2 == 2: CSINV (Aliases: CSETM, CINV)
-             * op2 == 3: CSNEG (Aliases: CNEG)
-             */
-            bool has_alias = (op2 != 0);
-
-            if (has_alias && rn == rm) {
-                data->cond_code = data->cond_code ^ 0x1;
-            }
-
-            data->target_addr = insn_vaddr + 4;
-        } else if ((opcode & STR_IMM_MASK) == STR_IMM_VAL ||
-                   (opcode & STUR_MASK) == STUR_VAL ||
-                   (opcode & STR_REG_MASK) == STR_REG_VAL) {
-
-            data->branch_type = BR_PSEUDO_REG_WATCH;
-            data->reg_idx = RT(opcode);
-
-            data->is_64bit = ((opcode >> 30) & 0x3) == 3;
-
-            data->target_addr = insn_vaddr + 4;
-
-        } else if (data->reg_idx != NO_REG_WATCH) {
-            data->branch_type = BR_PSEUDO_REG_WATCH;
-            data->target_addr = insn_vaddr + 4;
-        } else {
-            fprintf(stderr,
-                    "[ERROR] Configured addr 0x%lx is not a branch and has no register attached!\n",
-                    insn_vaddr);
-            g_mutex_unlock(&trace_lock);
-            return;
-            g_assert_not_reached();
-        }
-
-        data->is_decoded = true;
-
-        qemu_plugin_register_vcpu_insn_exec_cb(insn, vcpu_exec_cb,
-                                               QEMU_PLUGIN_CB_RW_REGS, data);
-        g_mutex_unlock(&trace_lock);
     }
 }
 
@@ -577,8 +595,9 @@ static void load_config_file(const char *filename)
         exit(EXIT_FAILURE);
     }
 
-    target_instructions = g_hash_table_new_full(g_int64_hash, g_int64_equal,
-                                                g_free, g_free);
+    target_instructions =
+        g_hash_table_new_full(g_int64_hash, g_int64_equal, g_free,
+                              (GDestroyNotify)g_ptr_array_unref);
 
     while (fgets(line, sizeof(line), fp)) {
         int num_tokens;
@@ -624,6 +643,7 @@ static void load_config_file(const char *filename)
             char *cln = strchr(tokens[i], ':');
             size_t uuid_len;
             uint64_t *key;
+            GPtrArray *trace_points;
 
             if (cln) {
                 *cln = '\0';
@@ -646,10 +666,16 @@ static void load_config_file(const char *filename)
             memcpy(data->uuid, uuid_str, uuid_len > UUID_SIZE ? UUID_SIZE :
                                                                 uuid_len);
 
-            key = g_new(uint64_t, 1);
-            *key = addr;
+            trace_points = g_hash_table_lookup(target_instructions, &addr);
+            if (!trace_points) {
+                key = g_new(uint64_t, 1);
+                *key = addr;
 
-            g_hash_table_insert(target_instructions, key, data);
+                trace_points = g_ptr_array_new_with_free_func(g_free);
+                g_hash_table_insert(target_instructions, key, trace_points);
+            }
+
+            g_ptr_array_add(trace_points, data);
         }
 
         g_strfreev(tokens);
