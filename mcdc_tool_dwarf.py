@@ -575,6 +575,17 @@ def _func_declares_name(cu: CompileUnit, addr: int, name: str) -> bool:
     return False
 
 
+def _is_const_global(cu: CompileUnit, name: str) -> bool:
+    """True if 'name' is a const global, which compiler can constant fold"""
+    for die in cu.get_top_DIE().iter_children():
+        if die.tag != "DW_TAG_variable" or "DW_AT_type" not in die.attributes:
+            continue
+        attr = die.attributes.get("DW_AT_name")
+        if attr and attr.value.decode() == name:
+            return die.get_DIE_from_attribute("DW_AT_type").tag == "DW_TAG_const_type"
+    return False
+
+
 def get_variable_at_loc(cu: CompileUnit, addr: int, name: str) -> VariableInfo:
     best_match = None
     for die in cu.get_top_DIE().iter_children():
@@ -1292,6 +1303,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                             TRACE_MATCH(
                                 f"   last seen variable {LAST_SEEN_VAR} at {instructions[state.instr_idx].address:x}"
                             )
+                            return state
+                        if _is_const_global(cu, operand.name):
+                            TRACE_MATCH(f"  {operand.name} is const, assuming folded")
                             return state
                         raise MatchError(f"Don't know how to handle {mnemonic} (addrx)")
 
