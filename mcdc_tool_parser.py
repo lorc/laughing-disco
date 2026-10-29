@@ -433,20 +433,24 @@ def handle_expression(ast: ASTEntry) -> SAST:
                 else:
                     rest = [recurse(inner) for inner in ast.inner[1:]]
 
-                return FlowControlStructure(ast.get_loc(), cond, rest, ast)
+                return FlowControlStructure(ast.get_loc(), cond, rest, ast,
+                                           ast.inner[0])
 
             case "WhileStmt" | "ConditionalOperator" | "BinaryConditionalOperator":
                 rest = [recurse(inner) for inner in ast.inner[1:]]
-                return FlowControlStructure(ast.get_loc(), recurse(ast.inner[0]), rest, ast)
+                return FlowControlStructure(ast.get_loc(), recurse(ast.inner[0]),
+                                           rest, ast, ast.inner[0])
             case "DoStmt":
                 rest = [recurse(inner) for inner in ast.inner[0:-1]]
-                return FlowControlStructure(ast.get_loc(), recurse(ast.inner[-1]), rest, ast)
+                return FlowControlStructure(ast.get_loc(), recurse(ast.inner[-1]),
+                                           rest, ast, ast.inner[-1])
             case "ForStmt":
                 rest = []
                 for idx, item in enumerate(ast.inner):
                     if idx != 2 and item:
                         rest.append(recurse(item))
-                return FlowControlStructure(ast.get_loc(), recurse(ast.inner[2]), rest, ast)
+                return FlowControlStructure(ast.get_loc(), recurse(ast.inner[2]),
+                                           rest, ast, ast.inner[2])
 
             case "StmtExpr":
                 if len(ast.inner) != 1:
