@@ -750,13 +750,15 @@ class FCallArg(SAST):
 class FlowControlStructure(SAST):
     """Control structure which has some sort of "check" which makes implicit bool cast """
 
-    def __init__(self, loc: CodeLoc, check: SAST, rest: list[SAST], ast: ASTEntry):
+    def __init__(self, loc: CodeLoc, check: SAST, rest: list[SAST], ast: ASTEntry,
+                 check_ast: Optional[ASTEntry] = None):
         # We don't know what it is, but we need to wrap this into
         # BoolExpression just in case
         if isinstance(check, BoolExpression):
             bool_check = check
         else:
-            bool_check = BoolExpression(check.loc, ast, check, BoolExpression.OP_IMPLICIT_CAST)
+            bool_check = BoolExpression(check.loc, check_ast or ast, check,
+                                        BoolExpression.OP_IMPLICIT_CAST)
 
         self._derived_init_(loc, ast, [bool_check] + rest)
 
