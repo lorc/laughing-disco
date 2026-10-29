@@ -1816,7 +1816,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             instr = instructions[state.instr_idx]
             if instr.mnemonic == "cbnz":
                 ret.append(TracePoint(instructions[state.instr_idx].address, not inverted, e))
-                return state.derive(target_reg=None, partial=False)
+                match_branch_isntr(instructions[state.instr_idx + 1], "b")
+                return state.advance(2).derive(target_reg=None, partial=False)
 
         b_const = isinstance(e.b, IntLiteral)
 
