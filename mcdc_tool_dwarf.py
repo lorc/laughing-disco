@@ -360,7 +360,7 @@ def _get_addr_ranges_for_expr(expr: SAST, locations: list[DwarfLoc],
                     start_loc = loc
                     # Try to find begining of the statement
                     if not loc.lp_state.is_stmt:
-                        for idx2 in range(idx, 0, -1):
+                        for idx2 in range(idx, -1, -1):
                             if _loc_has_other_expr(expr, locations[idx2],
                                                        expr_by_line):
                                 break
