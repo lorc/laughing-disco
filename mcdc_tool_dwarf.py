@@ -347,8 +347,15 @@ def _get_addr_ranges_for_expr(expr: SAST, locations: list[DwarfLoc],
                 expr_seq = loc.seq
                 break
 
+        def _loc_matches(loc: DwarfLoc) -> bool:
+            """Locations of this expression, including inlines if no own locations found"""
+            if _file_line_col_in_expr(expr, loc.fname, loc.lp_state.line,
+                                      loc.lp_state.column):
+                return True
+            return expr_seq is None and _loc_is_in_expr(expr, loc)
+
         for idx, loc in enumerate(locations):
-            if _loc_is_in_expr(expr, loc):
+            if _loc_matches(loc):
                 if expr_seq is not None and loc.seq != expr_seq:
                     continue
                 # Always update end_loc
