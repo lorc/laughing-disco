@@ -1030,12 +1030,22 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             skip += 1
         return state
 
+    def is_nop_branch(idx: int) -> bool:
+        """check that this insn is 'b pc+4', which marks end of basic block
+        """
+        instr = instructions[idx]
+        if instr.mnemonic != "b" or idx + 1 >= len(instructions):
+            return False
+        return instr.mnemonic == "b" \
+            and instr.operands[0].value.imm == instructions[idx + 1].address
+
     def ff_to_cond_instr(search_state: MatchState) -> MatchState:
         branches = {"tbz", "tbnz", "cbz", "cbnz", "cset", "b.ne", "b.eq"}
         fallbacks = {"str", "stur"}
         fallback_idx = -1
 
-        for idx in range(search_state.instr_idx, len(instructions)):
+        idx = search_state.instr_idx
+        while idx < len(instructions):
             mnem = instructions[idx].mnemonic
 
             if mnem in branches:
@@ -1046,7 +1056,17 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
             # stop on exit of this block
             if mnem in END_OF_BLOCK_INSTR:
-                break
+                # Several 'b pc+4' in a row are empty blocks, they
+                # does not end the expression, and should not be stopped on
+                skip = idx
+                while skip < len(instructions) and is_nop_branch(skip):
+                    skip += 1
+                if skip - idx < 2:
+                    break
+                idx = skip
+                continue
+
+            idx += 1
 
         if fallback_idx != -1:
             return search_state.derive(instr_idx=fallback_idx)
