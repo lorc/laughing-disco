@@ -274,13 +274,24 @@ class SAST:
         assert self.is_const()
         return self._bool_const_val
 
-    def get_topmost_bool_expr(self) -> list[BoolExpression]:
+    def is_double_not(self) -> bool:
+        """True for '!!x': two '!' around something which is not a bool"""
+        if not isinstance(self, BoolExpression) or self.op != BoolExpression.OP_NOT:
+            return False
+        if not isinstance(self.a, BoolExpression) or self.a.op != BoolExpression.OP_NOT:
+            return False
+        return not self.a.a.has_bool_expr()
+
+    def get_topmost_bool_expr(self, in_decision: bool = False) -> list[BoolExpression]:
         if isinstance(self, BoolExpression):
-            return [self]
+            if in_decision or not self.is_double_not():
+                return [self]
+            return []
 
         ret: list[BoolExpression] = []
-        for ch in self.inner:
-            ret.extend(ch.get_topmost_bool_expr())
+        for idx, ch in enumerate(self.inner):
+            check = isinstance(self, FlowControlStructure) and idx == 0
+            ret.extend(ch.get_topmost_bool_expr(check))
         return ret
 
     def simplify(self):

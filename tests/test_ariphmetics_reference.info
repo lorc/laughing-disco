@@ -60,10 +60,6 @@ BRDA:90,0,0,1
 BRDA:90,0,1,1
 MCDC:90,0,t,1,0,(<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> ^ <NonBoolVar (int)b>) / <IntLiteral 2>)
 MCDC:90,0,f,1,0,(<NonBoolExpr> (<NonBoolExpr> <NonBoolVar (int)a> ^ <NonBoolVar (int)b>) / <IntLiteral 2>)
-BRDA:96,0,0,1
-BRDA:96,0,1,1
-MCDC:96,0,t,1,0,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 2>)
-MCDC:96,0,f,1,0,(<NonBoolExpr> <NonBoolVar (int)a> / <IntLiteral 2>)
 BRDA:98,0,0,1
 BRDA:98,0,1,1
 BRDA:98,0,2,0
@@ -92,14 +88,6 @@ MCDC:127,0,t,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[
 MCDC:127,0,f,0,0,(<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>)
 MCDC:127,0,t,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
 MCDC:127,0,f,0,1,(<NonBoolVar (char)a> EQ (<NonBoolExpr> (<NonBoolExpr> (<array-subscr><NonBoolVar (char[32])g_arr>)[<IntLiteral 0>] - <IntLiteral 97>) + <IntLiteral 1>))
-BRDA:146,0,0,0
-BRDA:146,0,1,1
-MCDC:146,0,t,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 1> << <IntLiteral 2>))
-MCDC:146,0,f,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 1> << <IntLiteral 2>))
-BRDA:148,0,0,0
-BRDA:148,0,1,1
-MCDC:148,0,t,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 3> << <IntLiteral 2>))
-MCDC:148,0,f,0,0,(<NonBoolExpr> <MemberExpr <NonBoolVar (struct (unnamed at tests/test_ariphmetics.c:133:1))g_bool_field_test>.c> & (<NonBoolExpr> <IntLiteral 3> << <IntLiteral 2>))
 BRDA:151,0,0,0
 BRDA:151,0,1,1
 BRDA:151,0,2,0
@@ -134,19 +122,16 @@ DA:72,2
 DA:78,2
 DA:84,2
 DA:90,2
-DA:96,2
 DA:98,2
 DA:106,2
 DA:111,1
 DA:118,1
 DA:127,1
-DA:146,1
-DA:148,1
 DA:151,1
 DA:156,1
 DA:161,4
-BRF:60
-BRH:40
-LF:25
-LH:25
+BRF:54
+BRH:36
+LF:22
+LH:22
 end_of_record
