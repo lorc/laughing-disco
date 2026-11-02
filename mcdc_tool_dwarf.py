@@ -1002,6 +1002,21 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             state.target_reg = get_instr_reg_operand(instr, 0)
         return state
 
+    def bool_is_already_in_reg(state: MatchState, base_reg: str, offset: int) -> bool:
+        """The expression starts at a 'bic' and never loads its variable"""
+        if state.instr_idx != 0 or instructions[0].mnemonic != "bic":
+            return False
+        for instr in instructions:
+            if not instr.mnemonic.startswith("ld") or len(instr.operands) < 2:
+                continue
+            operand = instr.operands[1]
+            if operand.type != capstone.arm64_const.ARM64_OP_MEM:
+                continue
+            if aarch64_reg_name(operand.value.mem.base) == base_reg and \
+               operand.value.mem.disp == offset:
+                return False
+        return True
+
     def match_optional_nop(state: MatchState) -> MatchState:
         instr = instructions[state.instr_idx]
         if instr.mnemonic == "nop":
@@ -1350,6 +1365,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 try:
                     match_instr_read_mem_operand(instr, 1, target_reg, offset)
                 except MatchError:
+                    if bool_is_already_in_reg(state, target_reg, offset):
+                        TRACE_MATCH(f"  {operand.name} is already in a register "
+                                    f"at 0x{instr.address:x}")
+                        return state
                     if state.partial and (instr.mnemonic in END_OF_BLOCK_INSTR or
                         instr.mnemonic in ("subs", "adds")):
                         TRACE_MATCH(f"Found {instr.mnemonic} at {instr.address:x}")
@@ -1770,6 +1789,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
                 ret.append(TracePoint(instructions[state.instr_idx + 1].address, False, e))
                 return state.advance(2)
+            case "bic" if state.instr_idx == 0:
+                instr = instructions[state.instr_idx]
+                reg = get_instr_reg_operand(instr, 2)
+                ret.append(TracePoint(instr.address, False, e, reg=reg))
+                return state.advance()
             case "orr":
                 if instructions[state.instr_idx + 1].mnemonic != "str":
                     raise MatchError("Found implicit cast try with orr, but without store")
