@@ -357,7 +357,7 @@ def process_mcdc_coverage(
             continue
 
 
-        total_hits = sum(v.get('hit_count', 1) for v in variants)
+        total_hits = sum(v.hit_count for v in test_vectors)
 
         if getattr(expr, 'loc', None) and getattr(expr.loc, 'file', None):
             file_coverage[expr.loc.file].append({
