@@ -1,21 +1,41 @@
+from __future__ import annotations
+
 import struct
 import argparse
 import pickle
 import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Dict, List, Tuple, Any
 
 from mcdc_tool_definitions import BoolExpression
 from mcdc_tool_dwarf import ExprTraceInfo, TracePoint
 
+@dataclass
+class TraceRecord:
+    """One execution path through a decision, as recorded by the plugin."""
+    hit_count: int
+    exit_target: int
+    nodes: Tuple[Tuple[int, int], ...]
+
+@dataclass
 class TestVector:
-    def __init__(self, outcome, val_mask, eval_mask, exit_target=0,
-                 hit_count = 0):
-        self.outcome = outcome
-        self.val = val_mask
-        self.eval = eval_mask
-        self.exit = exit_target
-        self.hit_count = hit_count
+    """One evaluated path through a decision, as recovered from a trace."""
+    outcome: int
+    val_mask: int
+    eval_mask: int
+    exit_target: int = 0
+    hit_count: int = 0
+
+@dataclass
+class DecisionCoverage:
+    """Evaluated coverage of one decision, ready to be written as LCOV."""
+    expr: BoolExpression
+    leafs: List[Any]
+    polarities: List[bool]
+    pairs_found: List[Any]
+    branch_hits: List[Tuple[int, int]]
+    total_hits: int
 
 TRACE_VERSION = 1
 
@@ -91,7 +111,7 @@ def _parse_payload(sig_data: bytes) -> Tuple[str, int, tuple]:
     return uuid_str, exit_target, tuple(nodes)
 
 
-def parse_brtrace(trace_file: str) -> Dict[str, List[Dict[str, Any]]]:
+def parse_brtrace(trace_file: str) -> Dict[str, List[TraceRecord]]:
     """
     Parses a QEMU branch trace file, validates its headers, and returns
     condition executions by their associated UUID string.
@@ -124,11 +144,11 @@ def parse_brtrace(trace_file: str) -> Dict[str, List[Dict[str, Any]]]:
             uuid_str, exit_target, nodes = _parse_payload(cond_exec_data)
 
             if nodes:
-                conditions[uuid_str].append({
-                    'hit_count': hit_count,
-                    'exit_target': exit_target,
-                    'nodes': nodes
-                })
+                conditions[uuid_str].append(TraceRecord(
+                    hit_count=hit_count,
+                    exit_target=exit_target,
+                    nodes=nodes,
+                ))
 
             trace_id_counter += 1
 
@@ -153,20 +173,19 @@ def load_dwarf_data(dwarf_pickle_file) -> dict[Tuple, List[ExprTraceInfo]]:
 
 
 def _evaluate_test_vectors(
-    variants: List[Dict[str, Any]],
+    records: List[TraceRecord],
     expr: Any,
     leafs: List[Any],
     addr_map: Dict[int, Tuple[int, Any]],
-) -> List['TestVector']:
+) -> List[TestVector]:
     """Injects hardware traces into the AST and resolves outcomes."""
     unique_test_vectors = {}
 
-    for var in variants:
-        path_signature = var['nodes']
-        hit_count = var.get('hit_count', 1)
+    for record in records:
+        path_signature = record.nodes
 
         if path_signature in unique_test_vectors:
-            unique_test_vectors[path_signature].hit_count += hit_count
+            unique_test_vectors[path_signature].hit_count += record.hit_count
             continue
 
         val_mask = 0
@@ -174,7 +193,7 @@ def _evaluate_test_vectors(
         expr.reset_value()
 
         try:
-            for addr, raw_flag in var['nodes']:
+            for addr, raw_flag in record.nodes:
                 if addr not in addr_map:
                     continue
 
@@ -207,26 +226,26 @@ def _evaluate_test_vectors(
             outcome=1 if outcome else 0,
             val_mask=val_mask,
             eval_mask=eval_mask,
-            exit_target=var['exit_target'],
-            hit_count=hit_count
+            exit_target=record.exit_target,
+            hit_count=record.hit_count,
         )
 
     return list(unique_test_vectors.values())
 
 
-def _print_diag(expr: Any, test_vectors: List['TestVector']):
+def _print_diag(expr: Any, test_vectors: List[TestVector]):
     """Prints bitmask and outcome diagnostics for a specific decision."""
     log.debug(f"\n[ DEBUG ] Evaluated Vectors for {getattr(expr, 'loc', None)}")
     for idx, t in enumerate(test_vectors, 1):
         log.debug(
-            f"  -> TestVec {idx:2d} | Val Mask: {t.val:04b} | "
-            f"Eval Mask: {t.eval:04b} | Outcome: {t.outcome} "
-            f"(Exit: 0x{t.exit:x})"
+            f"  -> TestVec {idx:2d} | Val Mask: {t.val_mask:04b} | "
+            f"Eval Mask: {t.eval_mask:04b} | Outcome: {t.outcome} "
+            f"(Exit: 0x{t.exit_target:x})"
         )
     log.debug("-" * 60)
 
 def _find_mcdc_pairs(
-    test_vectors: List['TestVector'],
+    test_vectors: List[TestVector],
     leafs: List[Any]
 ) -> List[bool]:
     """Calculates independence pairs to prove MC/DC coverage."""
@@ -243,15 +262,16 @@ def _find_mcdc_pairs(
         for t1 in true_tvs:
             for t2 in false_tvs:
                 # Ensure the target condition was evaluated in both vectors
-                if not (t1.eval & target_bit) or not (t2.eval & target_bit):
+                if (not (t1.eval_mask & target_bit)
+                        or not (t2.eval_mask & target_bit)):
                     continue
 
                 # Ensure the condition actually flipped between the vectors
-                if not ((t1.val ^ t2.val) & target_bit):
+                if not ((t1.val_mask ^ t2.val_mask) & target_bit):
                     continue
 
-                shared_eval = t1.eval & t2.eval
-                diff = t1.val ^ t2.val
+                shared_eval = t1.eval_mask & t2.eval_mask
+                diff = t1.val_mask ^ t2.val_mask
 
                 # Prove independence: only the target bit caused the flip
                 if (diff & shared_eval) == target_bit:
@@ -290,7 +310,7 @@ def _leaf_polarities(expr: Any, leafs: List[Any]) -> List[bool]:
 
 
 def _find_branch_hits(
-    test_vectors: List['TestVector'],
+    test_vectors: List[TestVector],
     polarities: List[bool]
 ) -> List[Tuple[int, int]]:
     """
@@ -302,13 +322,13 @@ def _find_branch_hits(
         target_bit = 1 << i
 
         true_count = sum(
-            getattr(t, 'hit_count', 1) for t in test_vectors
-            if (t.eval & target_bit) and (t.val & target_bit)
+            t.hit_count for t in test_vectors
+            if (t.eval_mask & target_bit) and (t.val_mask & target_bit)
         )
 
         false_count = sum(
-            getattr(t, 'hit_count', 1) for t in test_vectors
-            if (t.eval & target_bit) and not (t.val & target_bit)
+            t.hit_count for t in test_vectors
+            if (t.eval_mask & target_bit) and not (t.val_mask & target_bit)
         )
 
         if negated:
@@ -319,9 +339,9 @@ def _find_branch_hits(
     return branch_hits
 
 def process_mcdc_coverage(
-    trace_data: Dict[str, Any],
+    trace_data: Dict[str, List[TraceRecord]],
     dwarf_map: Dict[Tuple, List[Any]]
-) -> Dict[str, List[Dict[str, Any]]]:
+) -> Dict[str, List[DecisionCoverage]]:
     """
     Evaluates coverage by mapping QEMU traces to DWARF AST representations.
     """
@@ -333,9 +353,9 @@ def process_mcdc_coverage(
         leafs = expr.get_leafs()
         polarities = _leaf_polarities(expr, leafs)
 
-        variants = []
+        records = []
         for uuid_str in {info.expr.uuid for info in dwarf_infos}:
-            variants.extend(trace_data.get(uuid_str, []))
+            records.extend(trace_data.get(uuid_str, []))
 
         addr_map = {}
         for dwarf_info in dwarf_infos:
@@ -344,7 +364,7 @@ def process_mcdc_coverage(
 
         try:
             test_vectors = _evaluate_test_vectors(
-                variants, expr, leafs, addr_map
+                records, expr, leafs, addr_map
             )
 
             _print_diag(expr, test_vectors)
@@ -357,54 +377,48 @@ def process_mcdc_coverage(
             continue
 
 
-        total_hits = sum(v.hit_count for v in test_vectors)
+        total_hits = sum(t.hit_count for t in test_vectors)
 
         if getattr(expr, 'loc', None) and getattr(expr.loc, 'file', None):
-            file_coverage[expr.loc.file].append({
-                'expr': expr,
-                'leafs': leafs,
-                'polarities': polarities,
-                'pairs_found': pairs_found,
-                'branch_hits': branch_hits,
-                'total_hits': total_hits
-            })
+            file_coverage[expr.loc.file].append(DecisionCoverage(
+                expr=expr,
+                leafs=leafs,
+                polarities=polarities,
+                pairs_found=pairs_found,
+                branch_hits=branch_hits,
+                total_hits=total_hits,
+            ))
 
     return file_coverage
 
-def _write_file_records(file_handle, filepath: str, expressions: List[Dict]):
+def _write_file_records(file_handle, filepath: str,
+                        decisions: List[DecisionCoverage]):
     """Writes the LCOV formatted coverage data for a single source file."""
     file_handle.write(f"SF:{filepath}\n")
 
-    expressions_by_line = defaultdict(list)
-    for expr_data in expressions:
-        loc = getattr(expr_data['expr'], 'loc', None)
+    decisions_by_line = defaultdict(list)
+    for decision in decisions:
+        loc = getattr(decision.expr, 'loc', None)
         line_num = getattr(loc, 'line', 1) if loc else 1
-        expressions_by_line[line_num].append(expr_data)
+        decisions_by_line[line_num].append(decision)
 
     branches_found = 0
     branches_hit = 0
     line_hits = defaultdict(int)
 
-    for line_num in sorted(expressions_by_line.keys()):
+    for line_num in sorted(decisions_by_line.keys()):
         line_branch_id = 0
         line_mcdc_id = 0
 
-        for expr_data in expressions_by_line[line_num]:
-            expr = expr_data['expr']
-            leafs = expr_data['leafs']
-            polarities = expr_data['polarities']
-            pairs_found = expr_data['pairs_found']
-            branch_hits = expr_data['branch_hits']
-            total_hits = expr_data['total_hits']
-
+        for decision in decisions_by_line[line_num]:
+            total_hits = decision.total_hits
             line_hits[line_num] += total_hits
-            num_leafs = len(leafs)
 
             mcdc_group_id = line_mcdc_id
             line_mcdc_id += 1
 
             # Write Branch Coverage
-            for true_hits, false_hits in branch_hits:
+            for true_hits, false_hits in decision.branch_hits:
                 t_val = true_hits if total_hits > 0 else "-"
                 f_val = false_hits if total_hits > 0 else "-"
 
@@ -419,31 +433,31 @@ def _write_file_records(file_handle, filepath: str, expressions: List[Dict]):
                 branches_hit += (1 if false_hits > 0 else 0)
 
             # Write MCDC Coverage
-            for i, leaf in enumerate(leafs):
-                is_covered = 1 if pairs_found[i] else 0
+            for i, leaf in enumerate(decision.leafs):
+                is_covered = 1 if decision.pairs_found[i] else 0
                 expr_str = str(leaf).replace(',', ' ')
 
-                if polarities[i]:
+                if decision.polarities[i]:
                     expr_str = f"!({expr_str})"
 
                 file_handle.write(f"MCDC:{line_num},{mcdc_group_id},t,{is_covered},{i},{expr_str}\n")
                 file_handle.write(f"MCDC:{line_num},{mcdc_group_id},f,{is_covered},{i},{expr_str}\n")
 
     # Write executed line data
-    for line in sorted(expressions_by_line.keys()):
+    for line in sorted(decisions_by_line.keys()):
         file_handle.write(f"DA:{line},{line_hits[line]}\n")
 
     file_handle.write(f"BRF:{branches_found}\n")
     file_handle.write(f"BRH:{branches_hit}\n")
 
-    file_handle.write(f"LF:{len(expressions_by_line)}\n")
-    lines_hit = sum(1 for line in expressions_by_line if line_hits[line] > 0)
+    file_handle.write(f"LF:{len(decisions_by_line)}\n")
+    lines_hit = sum(1 for line in decisions_by_line if line_hits[line] > 0)
     file_handle.write(f"LH:{lines_hit}\n")
     file_handle.write("end_of_record\n")
 
 
 def generate_lcov(
-    file_coverage: Dict[str, List[Dict]],
+    file_coverage: Dict[str, List[DecisionCoverage]],
     output_file: str = "coverage.info"
 ):
     """
@@ -452,8 +466,8 @@ def generate_lcov(
     with open(output_file, 'w') as f:
         f.write("TN:MCDC_Test_Report\n")
 
-        for filepath, expressions in file_coverage.items():
-            _write_file_records(f, filepath, expressions)
+        for filepath, decisions in file_coverage.items():
+            _write_file_records(f, filepath, decisions)
 
     print(f"\n[+] Successfully generated LCOV report at '{output_file}'")
 
@@ -483,14 +497,14 @@ def _parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _merge_trace_data(trace_files: List[str]) -> Dict[str, List[Any]]:
+def _merge_trace_data(trace_files: List[str]) -> Dict[str, List[TraceRecord]]:
     """Parses and merges multiple QEMU trace files into a single dictionary."""
     merged_trace_data = defaultdict(list)
 
     for t_file in trace_files:
         file_data = parse_brtrace(t_file)
-        for uuid_str, variants in file_data.items():
-            merged_trace_data[uuid_str].extend(variants)
+        for uuid_str, records in file_data.items():
+            merged_trace_data[uuid_str].extend(records)
 
     return merged_trace_data
 
