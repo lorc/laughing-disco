@@ -32,7 +32,7 @@ QEMU_PLUGIN_EXPORT int qemu_plugin_version = QEMU_PLUGIN_VERSION;
 #define CB_OPCODE      0x34000000
 #define TB_OPCODE      0x36000000
 
-#define CSEL_OPCODE_MASK 0x7FE00000
+#define CSEL_OPCODE_MASK 0x3FE00800
 #define CSEL_OPCODE      0x1A800000
 
 #define STR_IMM_MASK 0x3FC00000
@@ -376,7 +376,7 @@ static void register_trace_point(struct qemu_plugin_insn *insn,
         uint32_t rn = RN(opcode);
         uint32_t rm = RM(opcode);
 
-        uint32_t op2 = (opcode >> 10) & 0x3;
+        uint32_t op2 = (((opcode >> 30) & 1) << 1) | ((opcode >> 10) & 1);
 
         data->branch_type = BR_CSEL;
         data->cond_code  = (opcode >> 12) & 0x0F;
@@ -386,6 +386,7 @@ static void register_trace_point(struct qemu_plugin_insn *insn,
          * 'CSET  Xd, cond' -> 'CSINC Xd, XZR, XZR, invert(cond)'
          * 'CINC  Xd, Xn, cond' -> 'CSINC Xd, Xn, Xn, invert(cond)'
          *
+         * op2 is 'op' (bit 30) followed by 'o2' (bit 10):
          * op2 == 0: CSEL  (Standard select, no inversion)
          * op2 == 1: CSINC (Aliases: CSET, CINC)
          * op2 == 2: CSINV (Aliases: CSETM, CINV)
