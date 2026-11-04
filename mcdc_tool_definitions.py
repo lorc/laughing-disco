@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
+import operator
 import itertools
 import uuid
 from dataclasses import dataclass
@@ -493,6 +494,9 @@ class BoolExpression(SAST):
     def has_bool_expr(self):
         return True
 
+    _CMP_OP_MAP = {OP_EQ: operator.eq, OP_XOR: operator.ne, OP_LT: operator.lt,
+                   OP_LE: operator.le, OP_GT: operator.gt, OP_GE: operator.ge}
+
     def is_const(self):
         # First, run base logic
         if super().is_const():
@@ -502,6 +506,9 @@ class BoolExpression(SAST):
                     self._bool_const_val = not self.a._bool_const_val
                     self._is_const = True
                     return True
+            if (self._bool_const_val is None and self.op in self._CMP_OP_MAP
+                    and isinstance(self.a, IntLiteral) and isinstance(self.b, IntLiteral)):
+                self._bool_const_val = self._CMP_OP_MAP[self.op](self.a.value, self.b.value)
             return True
 
         # Then do short circuit for constants
@@ -530,6 +537,9 @@ class BoolExpression(SAST):
             self.op = self._CMP_OP_INV[self.op]
 
     def get_leafs(self) -> list[BoolExpression]:
+        if self.is_const():
+            return []
+
         # Arithmetic comparisons are always leafs
         if self.op in (BoolExpression.OP_EQ, BoolExpression.OP_XOR, BoolExpression.OP_GE,
                        BoolExpression.OP_GT, BoolExpression.OP_LE, BoolExpression.OP_LT):
@@ -567,6 +577,10 @@ class BoolExpression(SAST):
 
     def reset_value(self) -> None:
         """Cleans calculated value for self and children"""
+        if self.is_const() and self._bool_const_val is not None:
+            self.value = self._bool_const_val
+            return
+
         self.value = None
 
         if getattr(self, 'children', None):
