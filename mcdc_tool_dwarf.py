@@ -412,6 +412,7 @@ def _get_next_expr_for_processing(locs: list[DwarfLoc], expressions: list[SAST],
 
 FAIL_COUNTER = 0
 ELF_RANGE_FAIL_CNT = 0
+LEAF_MISMATCH_CNT = 0
 
 
 def _get_inlines_to_skip(expr: ExprAddressData, inlines: list[DwarfInlinedFunc],
@@ -2021,6 +2022,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
     # at the beginning of a line
     # TODO: Remove min, this is only for debugging
     recurse(expr, MatchState(0, partial=True))
+
+    if len(ret) != len(expr.get_leafs()):
+        global LEAF_MISMATCH_CNT
+        LEAF_MISMATCH_CNT += 1
+        log.warning(f"{len(ret)} trace points for {len(expr.get_leafs())} "
+                    f"conditions at {expr.loc}")
+
     pprint(ret)
     return ExprTraceInfo(expr, ret)
 
@@ -2067,6 +2075,7 @@ def main():
         pickle.dump(trace_info, fp)
 
     log.info(f"FAIL_COUNTER = {FAIL_COUNTER}")
+    log.info(f"LEAF_MISMATCH_CNT = {LEAF_MISMATCH_CNT}")
     log.info(f"ELF_RANGE_FAIL_CNT = {ELF_RANGE_FAIL_CNT}")
     log.info(f"SIZEOF_NONE_CNT (included in FAIL_COUNTER) = {SIZEOF_NONE_CNT}")
     log.info(f"CODE_OUT_OF_SECTION = {CODE_OUT_OF_SECTION}")
