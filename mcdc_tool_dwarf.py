@@ -1066,6 +1066,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         branches = {"tbz", "tbnz", "cbz", "cbnz", "cset", "csel", "b.ne", "b.eq"}
         fallbacks = ("str", "stur")
         fallback_idx = -1
+        and_idx = -1
 
         idx = search_state.instr_idx
         while idx < len(instructions):
@@ -1076,6 +1077,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
             if mnem.startswith(fallbacks):
                 fallback_idx = idx
+
+            if mnem == "and" and and_idx == -1:
+                and_idx = idx
 
             # stop on exit of this block
             if mnem in END_OF_BLOCK_INSTR:
@@ -1093,6 +1097,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
         if fallback_idx != -1:
             return search_state.derive(instr_idx=fallback_idx)
+
+        if and_idx != -1:
+            return search_state.derive(instr_idx=and_idx)
 
         return search_state
 
@@ -1553,6 +1560,12 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 2
+                case "and" if new_state.instr_idx + 1 < len(instructions):
+                    instr = instructions[new_state.instr_idx]
+                    reg = get_instr_reg_operand(instr, 0)
+                    ret.append(TracePoint(instructions[new_state.instr_idx + 1].address,
+                                          False, e.b, reg=reg))
+                    new_state.instr_idx += 1
                 case mnemonic:
                     if mnemonic == "b":
                         prev = new_state.instr_idx - 1
