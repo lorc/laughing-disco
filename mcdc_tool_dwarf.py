@@ -1064,7 +1064,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
     def ff_to_cond_instr(search_state: MatchState) -> MatchState:
         branches = {"tbz", "tbnz", "cbz", "cbnz", "cset", "csel", "b.ne", "b.eq"}
-        fallbacks = {"str", "stur"}
+        fallbacks = ("str", "stur")
         fallback_idx = -1
 
         idx = search_state.instr_idx
@@ -1074,7 +1074,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             if mnem in branches:
                 return search_state.derive(instr_idx=idx)
 
-            if mnem in fallbacks:
+            if mnem.startswith(fallbacks):
                 fallback_idx = idx
 
             # stop on exit of this block
