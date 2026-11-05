@@ -9,7 +9,9 @@ from dataclasses import dataclass, fields
 from typing import Unpack
 from copy import copy
 
-from mcdc_tool_definitions import ASTEntry, BBInfo, BasicBlock, FunctionBlocks
+from mcdc_tool_definitions import ASTEntry, BBInfo, BasicBlock, FunctionBlocks, SAST, BoolExpression, BoolVar, NonBoolExpression
+
+import mcdc_tool_parser
 
 
 def main():
@@ -26,7 +28,7 @@ def main():
 SOURCE_SKIP_LIST = []
 
 
-def get_blocks(compile_commands: str, compile_unit: str = None) -> dict(str, MCDCExprInfo):
+def get_blocks(compile_commands: str, compile_unit: str = None) -> dict(str, BBInfo):
     compilation_db = open(compile_commands, "rt")
     db = json.load(compilation_db)
     seen = []
@@ -106,27 +108,6 @@ def process_root(root: ASTEntry) -> list[FunctionBlocks]:
     return functions
 
 
-@dataclass
-class BuildState:
-    prev: BasicBlock
-    end: BasicBlock
-    epilogue: BasicBlock
-    true_outcome: BasicBlock = None
-    false_outcome: BasicBlock = None
-
-    def derive(self, **kwargs: Unpack[BuildState]):
-        ret = copy(self)
-        for field in fields(self):
-            if field.name in kwargs:
-                ret.__dict__[field.name] = kwargs[field.name]
-                del kwargs[field.name]
-
-        if kwargs:
-            raise Exception(f"Unknown values left in kwargs: {kwargs}")
-
-        return ret
-
-
 def dump_to_dot(fname: str, func_name: str, block: BasicBlock):
     dot = open(fname + ".dot", "wt")
     seen_blocks = set()
@@ -139,15 +120,18 @@ def dump_to_dot(fname: str, func_name: str, block: BasicBlock):
         dot.write(f'\t"{block.id}" [label="{block.type}"]\n')
         edges = f'\t"{block.id}"'
         if block.next:
-            edges += f' -> "{block.next.id}"'
+            edges += f' -> "{block.next.id}" [taillabel="next"]'
             if not block.next.id in seen_blocks:
                 recurse(block.next)
-        if block.alt:
-            edges += f' -> "{block.alt.id}"'
-            if not block.alt.id in seen_blocks:
-                recurse(block.alt)
         edges += "\n"
         dot.write(edges)
+        if block.alt:
+            edges = f'\t"{block.id}"'
+            edges += f' -> "{block.alt.id}" [taillabel="alt"]'
+            if not block.alt.id in seen_blocks:
+                recurse(block.alt)
+            edges += "\n"
+            dot.write(edges)
 
     dot.write(f"digraph {func_name} {{\n")
     recurse(block)
@@ -156,81 +140,202 @@ def dump_to_dot(fname: str, func_name: str, block: BasicBlock):
 
 
 def handle_function(ast: ASTEntry) -> FunctionBlocks:
-    blocks: list[BasicBlock] = []
-    entry = BasicBlock(ast, "entry")
-    epilogue = BasicBlock(ast, "exit")
-    state = BuildState(entry, epilogue, epilogue)
-    for child in ast.inner:
-        state = process_ast(child, state)
-    return FunctionBlocks(ast, ast.data["name"], entry)
+    cfg = CFGBuilder()
+    root_block = cfg.process_ast(ast)
+
+    #TODO?
+    #    root_block.try_merge()
+    return FunctionBlocks(ast, ast.data["name"], root_block)
 
 
-def handle_binary_operator(ast: ASTEntry, state: BuildState) -> BuildState:
-    assert ast.kind == "BinaryOperator"
-    op_code = ast.data["opcode"]
-    match op_code:
-        case "&&":
-            new_state = process_ast(ast.inner[0], state)
-
-            # Create a new block for the second expression
-            block = BasicBlock(ast, op_code)
-            new_state = new_state.derive(current=block)
-            new_state = process_ast(ast.inner[1], new_state)
-            block = BasicBlock(ast, op_code)
-        case "||":
-            left = process_ast(ast.inner[0])
-            right = process_ast(ast.inner[1])
-            block = BasicBlock(ast, op_code)
-            pass
-        case _:
-            pprint(ast.data)
-            raise NotImplementedError("OOPS")
-    raise NotImplementedError("OOPS")
-    return []
+@dataclass
+class LogicOp:
+    rhs: BasicBlock
+    lhs: BasicBlock
+    sast: SAST
+    sast_idx = 0
 
 
-def handle_if(ast: ASTEntry, state: BuildState) -> BuildState:
-    true_block = BasicBlock(ast, "true_branch", state.end)
-    false_block = BasicBlock(ast, "false_branch", state.end)
-    test_block = BasicBlock(ast.inner[0], "test_block", state.end)
-    state = state.derive(true_outcome=true_block, false_outcome=false_block)
-    return state
+class CFGBuilder:
 
+    def __init__(self):
+        self.cur: Optional[BasicBlock] = None
+        self.next: Optional[BasicBlock] = None
+        self.function_epilogue: Optional[BasicBlock] = None
+        self.__next: list[BasicBlock] = []
 
-def process_ast(ast: ASTEntry, state: BuildState) -> BuildState:
-    print(f"Procesing {ast.kind=}")
-    match ast.kind:
-        case "ParmVarDecl" | "NoThrowAttr" | "NonNullAttr" | "RestrictAttr" | "BuiltinAttr":
-            # "Function info" stuff
-            return state
-        case "FormatAttr" | "AsmLabelAttr" | "ColdAttr":
-            # ... continues
-            return state
-        case "IfStmt":
-            return handle_if(ast, state)
-        case "ReturnStmt":
-            # After computing statement we are going
-            # right to the exit of the function
-            new_state = process_ast(ast.inner[0], state)
-            new_state.prev.next = new_state.epilogue
-            return new_state
-        case "CompoundStmt" | "ImplicitCastExpr":
-            new_state = state
-            for child in ast.inner:
-                new_state = process_ast(child, new_state)
-                # TODO: update links?
-            return new_state
-        case "BinaryOperator":
-            return handle_binary_operator(ast, state)
-        case "IntegerLiteral":
-            return state
-        case "CallExpr":
-            return state
-        case _:
+    def push_next(self, next: Optional[BasicBlock] = None):
+        self.__next.append(self.next)
+        if next:
+            self.next = next
+
+    def pop_next(self):
+        self.next = self.__next.pop()
+
+    def insert_block(self, block: BasicBlock, set_next=True):
+        if set_next:
+            self.next = self.cur
+        self.cur = block
+
+    def process_ast(self, ast: ASTEntry) -> BasicBlock:
+        assert ast.kind == "FunctionDecl"
+
+        # Initialize the epilogue block
+        self.function_epilogue = BasicBlock("epilogue")
+        self.cur = self.function_epilogue
+
+        for x in reversed(ast.inner):
+            self.process(x)
+
+        if self.cur:
+            return self.cur
+        return self.next
+
+    def process_return(self, ast: ASTEntry):
+        assert ast.kind == "ReturnStmt"
+        # Maybe, we need to create a new block
+        if self.cur != self.function_epilogue:
+            block = BasicBlock("block_w_ret", None, self.function_epilogue)
+            self.insert_block(block, set_next=False)
+        else:
+            block = self.cur
+
+        # Process return value (if any)
+        if ast.inner[0]:
+            self.process(ast.inner[0])
+
+        return block
+
+    def process_compound_stmt(self, ast: ASTEntry):
+        for child in reversed(ast.inner):
+            self.process(child)
+        return self.cur
+
+    def process_if(self, ast: ASTEntry):
+        # End the current block
+        self.next = self.cur
+
+        # Create false and then true branches. Both are pointing to the previous block.
+        # New block for false branch
+        false_block = False
+        if len(ast.inner) == 3:
+            self.cur = None
+            self.push_next()
+            false_block = self.process(ast.inner[2])
+            self.pop_next()
+            self.insert_block(false_block, set_next=False)
+            false_block.type = f"false_branch({false_block.type})"
+            false_block.next = self.next
+        if not false_block:
+            # Create dummy block
+            # TODO: This was done to fix the problem with compiler that generates some code for else branch
+            # even if there is no else branch.
+            false_block = BasicBlock("dummy_false", None, self.next)
+            # false_block = self.next
+
+        # New block for true branch
+        self.cur = None
+        self.push_next()
+        true_block = self.process(ast.inner[1])
+        self.pop_next()
+        self.insert_block(true_block, set_next=False)
+        true_block.type = f"true_branch({true_block.type})"
+        true_block.next = self.next
+        #Now handle condition
+
+        # Special case: if (a && ..) or if (a || ...)
+        cond_op = ast.inner[0]
+        if cond_op.is_logic_op():
+            op_info = self.process_logic_op(cond_op, true_block, false_block)
+            cond_block = op_info.rhs
+        else:
+            cond_block = BasicBlock("if", None, true_block, false_block)
+
+        self.insert_block(cond_block, set_next=False)
+        return cond_block
+
+    def process_logic_op(self, ast: ASTEntry, true_block: BasicBlock,
+                         false_block: BasicBlock) -> LogicOp:
+        rhs = ast.inner[0]
+        if rhs.is_logic_op():
+            # TODO: Recurse in
+            raise NotImplementedError()
+        else:
+            # TODO: This is not always a var
+            rhs_sast = BoolVar(rhs.get_loc(), "TODO", rhs)
+        # TODO: Use self.next right here?
+        rhsblock = BasicBlock("rhs")
+        # TODO: Update based on top-level SAST, somehow
+        rhsblock.sast_idx = 0
+        lhs = ast.inner[1]
+        if lhs.is_logic_op():
+            # TODO: Recurse in
+            raise NotImplementedError()
+        else:
+            # TODO: This is not always a var
+            lhs_sast = BoolVar(lhs.get_loc(), "TODO", lhs)
+        # TODO: Use self.next right here?
+        lhsblock = BasicBlock("lhs")
+        # TODO: Update based on top-level SAST, somehow
+        lhsblock.sast_idx = 1
+        # TODO: Add option to pass/extend it on lower recursion levels
+        sast = BoolExpression(ast.get_loc(), ast, rhs_sast,
+                              BoolExpression.from_opcode(ast.data["opcode"]), lhs_sast)
+        rhsblock.sast = sast
+        lhsblock.sast = sast
+        match ast.data["opcode"]:
+            case "&&":
+                rhsblock.next = lhsblock
+                rhsblock.alt = false_block
+                lhsblock.next = true_block
+                lhsblock.alt = false_block
+            case "||":
+                rhsblock.next = true_block
+                rhsblock.alt = lhsblock
+                lhsblock.next = true_block
+                lhsblock.alt = false_block
+            case "!":
+                raise NotImplementedError()
+            case _:
+                assert False
+        return LogicOp(rhsblock, lhsblock, sast)
+
+    def process_simple(self, ast: ASTEntry):
+        for x in reversed(ast.inner):
+            self.process(x)
+        return self.cur
+
+    def process(self, ast: ASTEntry) -> Optinal[BasicBlock]:
+        print(f"Processing {ast.kind} at {ast.get_loc()}")
+
+        handler = CFGBuilder.__handlers.get(ast.kind)
+        if handler:
+            return handler(self, ast)
+        else:
             print(f"Don't know how to parse {ast.kind}")
             pprint(ast.data)
             raise NotImplementedError(f"Don't know how to parse {ast.kind}")
-            return next
+
+    def process_nop(self, ast: ASTEntry):
+        return self.cur
+
+    __handlers = {
+        "ParmVarDecl": process_nop,
+        "NoThrowAttr": process_nop,
+        "NonNullAttr": process_nop,
+        "RestrictAttr": process_nop,
+        "BuiltinAttr": process_nop,
+        "FormatAttr": process_nop,
+        "AsmLabelAttr": process_nop,
+        "ColdAttr": process_nop,
+        "IntegerLiteral": process_nop,
+        "ReturnStmt": process_return,
+        "CompoundStmt": process_compound_stmt,
+        "IfStmt": process_if,
+        "CallExpr": process_simple,
+        "ImplicitCastExpr": process_simple,
+        "DeclRefExpr": process_simple,
+    }
 
 
 if __name__ == "__main__":

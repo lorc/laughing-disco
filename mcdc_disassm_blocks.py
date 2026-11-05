@@ -96,7 +96,7 @@ def link_blocks(blocks: list[BlockData]) -> list[BasicBlock]:
 
     # First pass: link blocks in natural order
     for block in blocks:
-        new_block = BasicBlock(None, "disassm", insns=block.insns)
+        new_block = BasicBlock("disassm", insns=block.insns)
 
         insn_id = new_block.insns[-1].id
         cc_id = new_block.insns[-1].cc
@@ -144,7 +144,7 @@ def link_blocks(blocks: list[BlockData]) -> list[BasicBlock]:
             block.alt = get_block_by_addr(ret, addr)
 
         elif insn_id in COND_SET_INSTR:
-            new_block = BasicBlock(None, "cont_instr", next=block.next)
+            new_block = BasicBlock("cont_instr", next=block.next)
             new_block.insns = block.insns
             block.alt = new_block
         elif insn_id == capstone.arm64_const.ARM64_INS_BR:
@@ -153,7 +153,7 @@ def link_blocks(blocks: list[BlockData]) -> list[BasicBlock]:
     return ret
 
 
-def process_func(loader: cle.Loader, func: cle.backends.elf.subprogram):
+def process_func(loader: cle.Loader, func: cle.backends.elf.subprogram) -> FunctionBlocks:
     data = loader.memory.load(func.low_pc, func.high_pc - func.low_pc)
     dis = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
     dis.detail = True
@@ -166,7 +166,12 @@ def process_func(loader: cle.Loader, func: cle.backends.elf.subprogram):
 
 #        for i in block.insns:
 #            print(i)
+    blocks[0].try_merge()
     dump_to_dot(func.name, func.name, blocks)
+
+    # TODO: Check that blocks[1:] are reachable from blocks[0]
+
+    return FunctionBlocks(None, func.name, blocks[0])
 
 
 def dump_to_dot(fname: str, func_name: str, blocks: list[BasicBlock]):
@@ -183,28 +188,34 @@ def dump_to_dot(fname: str, func_name: str, blocks: list[BasicBlock]):
         dot.write(f'\t"{block.id}" [label="{block.type}:0x{start:x}-0x{end:x}"]\n')
         edges = f'\t"{block.id}"'
         if block.next:
-            edges += f' -> "{block.next.id}"'
+            edges += f' -> "{block.next.id}" [taillabel="next"]'
             if not block.next.id in seen_blocks:
                 recurse(block.next)
-        if block.alt:
-            edges += f' -> "{block.alt.id}"'
-            if not block.alt.id in seen_blocks:
-                recurse(block.alt)
         edges += "\n"
         dot.write(edges)
+        if block.alt:
+            edges = f'\t"{block.id}"'
+            edges += f' -> "{block.alt.id}" [taillabel="alt"]'
+            if not block.alt.id in seen_blocks:
+                recurse(block.alt)
+            edges += "\n"
+            dot.write(edges)
 
     dot.write(f"digraph {func_name} {{\n")
-    for block in blocks:
-        recurse(block)
+    recurse(blocks[0])
+    #    for block in blocks:
+    #        recurse(block)
     dot.write("}\n")
     dot.close()
 
 
-def process_file(fname: str, cu_name: str = None) -> BBInfo:
+def process_file(fname: str, cu_name: str = None) -> dict[str, BBInfo]:
     loader = cle.Loader(fname, load_debug_info=True)
     elfe = loader.all_elf_objects[0]
 
+    ret = {}
     for cu in elfe.compilation_units:
+        fbs: list[FunctionBlocks] = []
         if os.path.basename(cu.name) in ("unwind-dw2.c", "unwind-dw2-fde-dip.c",
                                          "__aarch64_have_sme.c", "unwind-c.c", "lse-init.c",
                                          "lse.S", "__arm_za_disable.S", "__arm_tpidr2_save.S",
@@ -219,7 +230,9 @@ def process_file(fname: str, cu_name: str = None) -> BBInfo:
                              "start_xen", "__div0"):
                 continue
             print(f"Function @{addr:x} {func.name}")
-            process_func(loader, func)
+            fbs.append(process_func(loader, func))
+        ret[cu.name] = BBInfo(cu.name, fbs)
+    return ret
 
 
 def main():

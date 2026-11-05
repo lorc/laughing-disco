@@ -142,6 +142,11 @@ class ASTEntry:
             return self.range.begin
         return None
 
+    def is_logic_op(self) -> bool:
+        if self.kind != "BinaryOperator" and self.kind != "UnaryOperator":
+            return False
+        return self.data["opcode"] in ("||", "&&", "!")
+
 
 class SAST:
     """Simple AST. Base class for other AST objects. Provides basic interface"""
@@ -447,7 +452,7 @@ class BoolExpression(SAST):
         OP_LE: OP_GT,
         OP_GT: OP_LE,
         OP_GE: OP_LT,
-        }
+    }
 
     def __init__(self, loc: CodeLoc, ast: ASTEntry, opr_a: SAST, op, opr_b: Optional[SAST] = None):
         self._derived_init_(loc, ast, [opr_a, opr_b] if opr_b else [opr_a])
@@ -867,6 +872,7 @@ class MiscExpr(SAST):
     def __repr__(self) -> str:
         return f"(MiscExpr:{self.inner})"
 
+
 @dataclass
 class MCDCExprInfo:
     compile_unit: str
@@ -879,15 +885,23 @@ class BBInfo:
     compile_unit: str
     function_blocks: list[FunctionBlocks]
 
+    def find_function(self, fname):
+        for fb in self.function_blocks:
+            if fb.function_name == fname:
+                return fb
+        raise LookupError(fname)
+
 
 @dataclass
 class BasicBlock:
-    ast: ASTEntry
     type: str
+    sast: SAST = None
     next: BasicBlock = None
     alt: BasicBlock = None
     insns: list = None
+    sast_idx = None
     id: uuid.UUID = field(default_factory=uuid.uuid4)
+
     def __repr__(self) -> str:
         add = ""
         if self.insns:
@@ -897,6 +911,60 @@ class BasicBlock:
         if self.alt and self.alt.insns:
             add += f" alt=@{self.alt.insns[0].address:x}"
         return f"<BasicBlock '{self.type}{add}'>"
+
+    def try_merge(self):
+        # Prepare for new round, recursively
+        self.__reset_counters()
+        # Count inbound edges, recursively
+        self.__count_inbound()
+        # Merge simple nodes, recursively
+        self.__try_merge(None)
+
+    def __can_merge(self, prev):
+        if self.next and not self.alt and self.__inbound_cnt == 1 and self.next.__inbound_cnt == 1 and prev:
+            return True
+        # Special case for single branch instruction
+        if self.insns and len(self.insns) == 1:
+            print(f"{self=} {len(self.insns)=}")
+            # TODO: Check that it is really 'b'
+            return True
+        return False
+
+    def __try_merge(self, prev: BasicBlock):
+        print(f"try_merge {self}")
+        if self.__can_merge(prev):
+            assert not self.sast
+            print(f"Merging {self} to {self.next}")
+            # Remove self
+            if prev.next == self:
+                prev.next = self.next
+            elif prev.alt == self:
+                prev.alt = self.next
+            else:
+                assert False
+            # move own instructions to the next node
+            self.next.insns[:0] = self.insns
+        else:
+            prev = self
+        if self.next:
+            self.next.__try_merge(prev)
+        if self.alt:
+            self.alt.__try_merge(prev)
+
+    def __reset_counters(self):
+        self.__inbound_cnt = 0
+        if self.next:
+            self.next.__reset_counters()
+        if self.alt:
+            self.alt.__reset_counters()
+
+    def __count_inbound(self):
+        if self.next:
+            self.next.__inbound_cnt += 1
+            self.next.__count_inbound()
+        if self.alt:
+            self.alt.__inbound_cnt += 1
+            self.alt.__count_inbound()
 
 
 @dataclass
