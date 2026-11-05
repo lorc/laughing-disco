@@ -1580,6 +1580,10 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     TRACE_MATCH(
                         f"Didn't found conditional op, instead got  {mnemonic} at {instructions[new_state.instr_idx].address:x}"
                     )
+                    if not mnemonic.startswith(("str", "stur")) and \
+                       mnemonic not in ("cset", "csel", "csinc", "csinv", "csneg"):
+                        raise MatchError(
+                            f"No traceable instruction for the condition, found {mnemonic}")
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 1
 
