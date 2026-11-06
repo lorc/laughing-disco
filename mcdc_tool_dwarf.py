@@ -990,6 +990,13 @@ def match_branch_isntr(instr: capstone.CsInsn, mnemonic: str):
         raise MatchError(f"Expected {mnemonic} found {instr.mnemonic}")
 
 
+def match_tail_branch(instructions: list[capstone.CsInsn], idx: int):
+    if idx + 1 >= len(instructions):
+        return
+
+    match_branch_isntr(instructions[idx + 1], "b")
+
+
 def match_sub_instr(instr: capstone.CsInsn, target_reg, const):
     if instr.mnemonic not in ("subs", "adds"):
         raise MatchError(
@@ -1584,27 +1591,27 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
             match instructions[new_state.instr_idx].mnemonic:
                 case "tbz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.a))
                     new_state.instr_idx += 2
                 case "tbnz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
                     new_state.instr_idx += 2
                 case "cbz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.a))
                     new_state.instr_idx += 2
                 case "cbnz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
                     new_state.instr_idx += 2
                 case "b.eq":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.a))
                     new_state.instr_idx += 2
                 case "b.ne":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
                     new_state.instr_idx += 2
                 case mnemonic:
@@ -1638,27 +1645,27 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
             match instructions[new_state.instr_idx].mnemonic:
                 case "tbz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.b))
                     new_state.instr_idx += 2
                 case "tbnz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 2
                 case "cbz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.b))
                     new_state.instr_idx += 2
                 case "cbnz":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 2
                 case "b.eq":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.b))
                     new_state.instr_idx += 2
                 case "b.ne":
-                    match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                    match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 2
                 case "and" if new_state.instr_idx + 1 < len(instructions):
@@ -1796,7 +1803,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     (e.op == BoolExpression.OP_LT and mnemonic in ("b.le", "b.ls"))):
                     inverted = not inverted
 
-                match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "b.gt" | "b.ge" | "b.hs" | "b.hi" | "b.ne" | "cbnz":
                 inverted = not op_is_gt_ge
@@ -1809,7 +1816,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                    (e.op == BoolExpression.OP_GT and mnemonic in ("b.ge", "b.hs"))):
                     inverted = not inverted
 
-                match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbnz":
                 is_unsigned = "unsigned" in str(e.a).lower() \
@@ -1817,7 +1824,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 inverted = (not op_is_gt_ge) if is_unsigned else op_is_gt_ge
                 if new_state.adds:
                     inverted = not inverted
-                match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbz":
                 is_unsigned = "unsigned" in str(e.a).lower() \
@@ -1825,11 +1832,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 inverted = op_is_gt_ge if is_unsigned else (not op_is_gt_ge)
                 if new_state.adds:
                     inverted = not inverted
-                match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "b.eq" if new_state.adds:
                 inverted = not op_is_gt_ge
-                match_branch_isntr(instructions[new_state.instr_idx + 1], "b")
+                match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address,
                                       inverted, e))
             case "cset" | "csel" | "csinc" | "cinc":
@@ -1858,11 +1865,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
         match instructions[state.instr_idx].mnemonic:
             case "tbz" | "cbz" | "b.eq":
-                match_branch_isntr(instructions[state.instr_idx + 1], "b")
+                match_tail_branch(instructions, state.instr_idx)
                 ret.append(TracePoint(instructions[state.instr_idx].address, True, e))
                 return state.advance(2)
             case "cbnz" | "tbnz" | "b.ne":
-                match_branch_isntr(instructions[state.instr_idx + 1], "b")
+                match_tail_branch(instructions, state.instr_idx)
                 ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
                 return state.advance(2)
             case "csel" | "csinc" | "cset" | "cinc" | "csetm" | "csinv":
@@ -1940,11 +1947,11 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
         match instructions[state.instr_idx].mnemonic:
             case "cbnz" | "tbnz" | "b.ne":
-                match_branch_isntr(instructions[state.instr_idx + 1], "b")
+                match_tail_branch(instructions, state.instr_idx)
                 ret.append(TracePoint(instructions[state.instr_idx].address, False, e.a))
                 return state.advance(2).derive(partial=True)
             case "tbz" | "cbz" | "b.eq":
-                match_branch_isntr(instructions[state.instr_idx + 1], "b")
+                match_tail_branch(instructions, state.instr_idx)
                 ret.append(TracePoint(instructions[state.instr_idx].address, True, e.a))
                 return state.advance(2).derive(partial=True)
             case "eor" | "bic":
@@ -2000,7 +2007,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             instr = instructions[state.instr_idx]
             if instr.mnemonic == "cbnz":
                 ret.append(TracePoint(instructions[state.instr_idx].address, not inverted, e))
-                match_branch_isntr(instructions[state.instr_idx + 1], "b")
+                match_tail_branch(instructions, state.instr_idx)
                 return state.advance(2).derive(target_reg=None, partial=False)
 
         b_const = isinstance(e.b, IntLiteral)
@@ -2052,27 +2059,27 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         TRACE_MATCH(f"{instructions[idx].mnemonic=}")
         match instructions[idx].mnemonic:
             case "b.hi" | "b.ls" if is_mod_vs_zero_cmp(e):
-                match_branch_isntr(instructions[idx + 1], "b")
+                match_tail_branch(instructions, idx)
                 if instructions[idx].mnemonic == "b.hi":
                     inverted = not inverted
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
             case "b.eq":
-                match_branch_isntr(instructions[idx + 1], "b")
+                match_tail_branch(instructions, idx)
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
             case "b.ne":
-                match_branch_isntr(instructions[idx + 1], "b")
+                match_tail_branch(instructions, idx)
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
             case "cbnz":
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                match_branch_isntr(instructions[idx + 1], "b")
+                match_tail_branch(instructions, idx)
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
             case "cbz":
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                match_branch_isntr(instructions[idx + 1], "b")
+                match_tail_branch(instructions, idx)
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
             case "tbnz":
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                match_branch_isntr(instructions[idx + 1], "b")
+                match_tail_branch(instructions, idx)
 
                 if b_const and e.b.value != 0:
                     inverted = not inverted
@@ -2080,7 +2087,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
             case "tbz":
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
-                match_branch_isntr(instructions[idx + 1], "b")
+                match_tail_branch(instructions, idx)
 
                 if b_const and e.b.value != 0:
                     inverted = not inverted
