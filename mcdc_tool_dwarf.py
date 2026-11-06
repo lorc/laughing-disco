@@ -1171,7 +1171,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             and instr.operands[0].value.imm == instructions[idx + 1].address
 
     def ff_to_cond_instr(search_state: MatchState) -> MatchState:
-        branches = {"tbz", "tbnz", "cbz", "cbnz", "cset", "csel", "b.ne", "b.eq"}
+        branches = {"tbz", "tbnz", "cbz", "cbnz", "b.ne", "b.eq",
+                    "cset", "csel", "csinc", "cinc", "csetm"}
         fallbacks = ("str", "stur")
         fallback_idx = -1
         and_idx = -1
