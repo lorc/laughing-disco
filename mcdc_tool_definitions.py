@@ -115,7 +115,7 @@ class ASTEntry:
                 s += "\n" + inner.__format__(lvl + 1)
         return s
 
-    def update_locations(self, fname: str, line: int):
+    def update_locations(self, fname: str, line: int) -> tuple[str, int]:
         global LAST_CODELOC_FILE
         if not LAST_CODELOC_FILE:
             LAST_CODELOC_FILE = fname
@@ -134,7 +134,9 @@ class ASTEntry:
                 line = self.range.end.line or self.range.begin.line
 
         for ch in self.inner:
-            ch.update_locations(fname, line)
+            fname, line = ch.update_locations(fname, line)
+
+        return fname, line
 
     def get_loc(self) -> CodeLoc:
         if self.loc:
