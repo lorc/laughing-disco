@@ -267,6 +267,30 @@ def _function_name_in_inlines(fname: str, inlines: list[DwarfInlinedFunc]):
     return any((fname == inline.name for inline in inlines))
 
 
+def _collect_subprograms(cu: CompileUnit) -> dict[str, list[DWARFRange]]:
+    """Address ranges of the functions this CU emitted code for, by name."""
+    ret: dict[str, list[DWARFRange]] = defaultdict(list)
+    for die in cu.iter_DIEs():
+        if die.tag != "DW_TAG_subprogram" or "DW_AT_name" not in die.attributes:
+            continue
+        name = die.attributes["DW_AT_name"].value.decode()
+        if "DW_AT_ranges" in die.attributes:
+            ret[name].extend(_parse_dw_at_ranges(die.attributes["DW_AT_ranges"], cu))
+        elif "DW_AT_low_pc" in die.attributes:
+            ret[name].extend(_simple_range_to_ranges(die))
+    return ret
+
+
+def _expr_owns_code_at(expr: SAST, addr: int, inlines: list[DwarfInlinedFunc],
+                       subprograms: dict[str, list[DWARFRange]]) -> bool:
+    """True if addr belongs to the function the expression was written in."""
+    name = expr.function_name()
+    if name == "(global scope)" or _function_name_in_inlines(name, inlines):
+        # Inlined copies are located from the inline ranges already.
+        return True
+    return any(r.low_pc <= addr <= r.high_pc for r in subprograms.get(name, ()))
+
+
 def _get_fcalls_in_expr(expr: SAST) -> list[str]:
     ret = []
     if isinstance(expr, FCall):
@@ -398,7 +422,9 @@ class ExprAddressData:
 
 
 def _get_next_expr_for_processing(locs: list[DwarfLoc], expressions: list[SAST],
-                                  inlines: list[DwarfInlinedFunc]) -> Optional[ExprAddressData]:
+                                  inlines: list[DwarfInlinedFunc],
+                                  subprograms: dict[str, list[DWARFRange]]
+                                  ) -> Optional[ExprAddressData]:
     expr_by_line: dict[int, list[SAST]] = defaultdict(list)
     for expr in expressions:
         if expr.loc and expr.loc.line:
@@ -407,6 +433,10 @@ def _get_next_expr_for_processing(locs: list[DwarfLoc], expressions: list[SAST],
     for expr in expressions:
         ranges = _get_addr_ranges_for_expr(expr, locs, inlines, expr_by_line)
         for r in ranges:
+            if not _expr_owns_code_at(expr, r[0], inlines, subprograms):
+                TRACE_EXPR_LOCATOR(
+                    f"  {r[0]:#x} is outside {expr.function_name()}, dropping range")
+                continue
             yield ExprAddressData(expr, r[0], r[1] + 24)
 
 
@@ -549,7 +579,8 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
     }
     TRACE_CU("Inlines:")
     TRACE_CU(pformat(inlines))
-    for next_expr in _get_next_expr_for_processing(dwarf_locs, expressions, inlines):
+    for next_expr in _get_next_expr_for_processing(dwarf_locs, expressions, inlines,
+                                                  _collect_subprograms(cu)):
         # Hack include end of inlined function if its start is in range
         if _addr_inside_inlines(inlines, next_expr.end_addr):
             for inline in inlines:
