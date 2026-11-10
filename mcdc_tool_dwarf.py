@@ -1091,6 +1091,10 @@ class MatchState:
         return self.derive(instr_idx=self.instr_idx + cnt)
 
 
+BRANCH_SELECT_INSTR = ("tbz", "tbnz", "cbz", "cbnz", "b.eq", "b.ne",
+                       "cset", "csel", "csinc", "cinc", "csetm", "csinv")
+
+
 def reg_cmp(r1: str, r2: str):
     if r1 is None or r2 is None:
         return False
@@ -1202,8 +1206,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             and instr.operands[0].value.imm == instructions[idx + 1].address
 
     def ff_to_cond_instr(search_state: MatchState) -> MatchState:
-        branches = {"tbz", "tbnz", "cbz", "cbnz", "b.ne", "b.eq",
-                    "cset", "csel", "csinc", "cinc", "csetm"}
+        branches = BRANCH_SELECT_INSTR
         fallbacks = ("str", "stur")
         fallback_idx = -1
         and_idx = -1
@@ -1921,6 +1924,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
                 reg = get_instr_reg_operand(instructions[state.instr_idx], 0)
 
+                if instructions[state.instr_idx + 1].mnemonic in BRANCH_SELECT_INSTR:
+                    return handle_implicit_cast_tail(e, state.advance(1))
+
                 ret.append(TracePoint(instructions[state.instr_idx + 1].address, False, e, reg=reg))
                 return state.advance(1)
             case "and":
@@ -1933,6 +1939,9 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                         raise MatchError("Can't set tracepoint on and, no next instr")
 
                     reg = get_instr_reg_operand(instr, 0)
+
+                    if instructions[state.instr_idx + 1].mnemonic in BRANCH_SELECT_INSTR:
+                        return handle_implicit_cast_tail(e, state.advance(1))
 
                     ret.append(
                         TracePoint(instructions[state.instr_idx + 1].address, False, e, reg=reg))
