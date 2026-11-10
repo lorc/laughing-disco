@@ -62,7 +62,7 @@ def insane_filter(expressions: list[SAST]):
         if not isinstance(expr.a, NonBoolExpression) or not isinstance(expr.b, NonBoolExpression):
             return True
         if expr.a.opcode != "&" or expr.b.opcode != "&":
-            return False
+            return True
         a = expr.a.operands[0]
         b = expr.b.operands[0]
         if not isinstance(a, NonBoolVar) or not isinstance(b, NonBoolVar):
