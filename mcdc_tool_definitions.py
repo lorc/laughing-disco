@@ -525,6 +525,11 @@ class BoolExpression(SAST):
                     self._bool_const_val = True
                     self._is_const = True
                     return True
+            case self.OP_IMPLICIT_CAST:
+                if self.a.is_const() and self.a._bool_const_val is not None:
+                    self._bool_const_val = self.a._bool_const_val
+                    self._is_const = True
+                    return True
         return False
 
     def simplify(self):
@@ -698,9 +703,25 @@ class NonBoolExpression(SAST):
         self._derived_init_(loc, ast, operands)
         self.opcode = opcode
 
+    # Binary operators whose result is always const with specific values
+    _CONST_OP_MAP = {"&": 0, "*": 0}
+
     @property
     def operands(self) -> list[SAST]:
         return self.inner
+
+    def is_const(self) -> bool:
+        if super().is_const():
+            return True
+
+        val = self._CONST_OP_MAP.get(self.opcode)
+        if val is not None and len(self.operands) == 2:
+            for op in self.operands:
+                if isinstance(op, IntLiteral) and op.value == val:
+                    self._is_const = True
+                    self._bool_const_val = False
+                    return True
+        return False
 
     def __repr__(self) -> str:
         match len(self.operands):
