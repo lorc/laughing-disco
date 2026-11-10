@@ -360,11 +360,10 @@ def handle_expression(ast: ASTEntry) -> SAST:
             else:
                 arg = ast.data["argType"]["qualType"]
             return SizeOf(ast.get_loc(), arg, ast)
+        if ast.data["name"] == "__alignof":
+            return NullOp(ast.get_loc(), ast)
         if len(ast.inner) == 0:
             print(ast.data)
-        #TODO
-        if ast.data["name"] == "__alignof":
-            raise Nope("Has __alignof")
         return NonBoolExpression(ast.get_loc(), ast.data["name"],
                                  [recurse(ast.inner[0])], ast)
 
