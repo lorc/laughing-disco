@@ -429,26 +429,30 @@ def handle_expression(ast: ASTEntry) -> SAST:
                         leaf = 1
                     else:
                         leaf = 2
-                    rest = [recurse(ast.inner[leaf])] if leaf < len(ast.inner) else []
+                    rest = [recurse_body(ast.inner[leaf])] if leaf < len(ast.inner) else []
                 else:
-                    rest = [recurse(inner) for inner in ast.inner[1:]]
+                    rest = [recurse_body(inner) for inner in ast.inner[1:]]
 
                 return FlowControlStructure(ast.get_loc(), cond, rest, ast,
                                            ast.inner[0])
 
-            case "WhileStmt" | "ConditionalOperator" | "BinaryConditionalOperator":
+            case "WhileStmt":
+                rest = [recurse_body(inner) for inner in ast.inner[1:]]
+                return FlowControlStructure(ast.get_loc(), recurse(ast.inner[0]),
+                                           rest, ast, ast.inner[0])
+            case "ConditionalOperator" | "BinaryConditionalOperator":
                 rest = [recurse(inner) for inner in ast.inner[1:]]
                 return FlowControlStructure(ast.get_loc(), recurse(ast.inner[0]),
                                            rest, ast, ast.inner[0])
             case "DoStmt":
-                rest = [recurse(inner) for inner in ast.inner[0:-1]]
+                rest = [recurse_body(inner) for inner in ast.inner[0:-1]]
                 return FlowControlStructure(ast.get_loc(), recurse(ast.inner[-1]),
                                            rest, ast, ast.inner[-1])
             case "ForStmt":
                 rest = []
                 for idx, item in enumerate(ast.inner):
                     if idx != 2 and item:
-                        rest.append(recurse(item))
+                        rest.append(recurse_body(item))
                 return FlowControlStructure(ast.get_loc(), recurse(ast.inner[2]),
                                            rest, ast, ast.inner[2])
 
@@ -492,6 +496,13 @@ def handle_expression(ast: ASTEntry) -> SAST:
                 pprint(ast.data)
                 raise Exception(
                     f"Didn't expected AST kind {ast.kind} at {ast.get_loc()}")
+
+    def recurse_body(ast: ASTEntry):
+        try:
+            return recurse(ast)
+        except Nope as e:
+            print(f"Got Nope for statement body {ast.get_loc()} ({e})")
+            return NullOp(ast.get_loc(), ast)
 
     try:
         expr = recurse(ast, True)
