@@ -277,6 +277,9 @@ def handle_expression(ast: ASTEntry) -> SAST:
         op = BoolExpression.from_opcode(opcode)
         if len(ast.inner) != 2:
             raise Exception("More than two childer for binary op? Strange")
+        if opcode == ",":
+            # The value of a comma expression is its right operand
+            return recurse(ast.inner[1])
         arg1 = recurse(ast.inner[0])
         arg2 = recurse(ast.inner[1])
         if op:
