@@ -365,6 +365,7 @@ static void register_trace_point(struct qemu_plugin_insn *insn,
         data->bit_pos = (b5 << 5) | b40;
         data->branch_type = ((opcode >> 24) & 1) ? BR_TBNZ : BR_TBZ;
         data->reg_idx    = opcode & 0x1F;
+        data->is_64bit   = b5;
 
         offset = (opcode >> 5) & 0x3FFF;
         if (offset & 0x2000) {
