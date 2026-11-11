@@ -677,7 +677,9 @@ class BoolExpression(SAST):
         ret = self.a.a
         if isinstance(ret, BoolExpression):
             return ret.promote_double_not()
-        return BoolExpression(self.loc, None, ret, self.OP_IMPLICIT_CAST)
+        cast = BoolExpression(self.loc, None, ret, self.OP_IMPLICIT_CAST)
+        cast._function_name = self._function_name
+        return cast
 
     __bin_op_mapping = {
         "||": OP_OR,
