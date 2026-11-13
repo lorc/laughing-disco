@@ -1,9 +1,12 @@
 from mcdc_compile_blocks import get_blocks
+from mcdc_compile_blocks import dump_to_dot as comp_dump_to_dot
 from mcdc_disassm_blocks import process_file
+from mcdc_disassm_blocks import dump_to_dot as decomp_dump_to_dot
 from mcdc_tool_definitions import ASTEntry, BBInfo, BasicBlock, FunctionBlocks, BoolExpression
 from mcdc_tool_dwarf import TracePoint, ExprTraceInfo
 import logging
 import argparse
+import os
 import contextlib
 from copy import copy
 from dataclasses import dataclass
@@ -20,12 +23,29 @@ def main():
     parser = argparse.ArgumentParser(description="MC/DC Control Flow Graph analyzer")
     parser.add_argument("executable", help="Path to the target executable file")
     parser.add_argument("compile_commands", help="Path to the compile_commands.json file")
+    parser.add_argument("--debug", "-d", action="count", default=0)
     args = parser.parse_args()
 
     log.info("Decompilling...")
     decompiled = process_file(args.executable, None)
+    print(f"{args.debug=}")
+    if args.debug > 0:
+        for cu in decompiled.values():
+            for func in cu.function_blocks:
+                fname = f"{cu.compile_unit}-{func.function_name}.decomp"
+                decomp_dump_to_dot(fname, func.function_name, func.root_block)
+                if args.debug > 1:
+                    os.system(f"dot {fname}.dot -O -Tpng")
+
     log.info("Compilling...")
     compiled = get_blocks(args.compile_commands, None)
+    if args.debug > 0:
+        for cu in compiled.values():
+            for func in cu.function_blocks:
+                fname = f"{cu.compile_unit}-{func.function_name}.comp"
+                comp_dump_to_dot(fname, func.function_name, func.root_block)
+                if args.debug > 1:
+                    os.system(f"dot {fname}.dot -O -Tpng")
 
     for cu in compiled.keys():
         log.info(f"Processing CU {cu}")
@@ -38,6 +58,8 @@ def main():
             comparator = CFGComparator()
             res = comparator.compare_graphs(decomp_func.root_block, comp_func.root_block)
             log.info(f"  Equal: {res}")
+            if not res:
+                raise Exception("Failed to compute graph equivalenence")
             tps = comparator.get_trace_points()
 
 

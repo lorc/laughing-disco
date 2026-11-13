@@ -166,15 +166,13 @@ def process_func(loader: cle.Loader, func: cle.backends.elf.subprogram) -> Funct
 
 #        for i in block.insns:
 #            print(i)
-    blocks[0].try_merge()
-    dump_to_dot(func.name, func.name, blocks)
-
+    blocks[0] = blocks[0].try_merge()
     # TODO: Check that blocks[1:] are reachable from blocks[0]
 
     return FunctionBlocks(None, func.name, blocks[0])
 
 
-def dump_to_dot(fname: str, func_name: str, blocks: list[BasicBlock]):
+def dump_to_dot(fname: str, func_name: str, root_block: BasicBlock):
     dot = open(fname + ".dot", "wt")
     seen_blocks = set()
 
@@ -202,14 +200,12 @@ def dump_to_dot(fname: str, func_name: str, blocks: list[BasicBlock]):
             dot.write(edges)
 
     dot.write(f"digraph {func_name} {{\n")
-    recurse(blocks[0])
-    #    for block in blocks:
-    #        recurse(block)
+    recurse(root_block)
     dot.write("}\n")
     dot.close()
 
 
-def process_file(fname: str, cu_name: str = None) -> dict[str, BBInfo]:
+def process_file(fname: str, cu_name: str = None, dump: int = 0) -> dict[str, BBInfo]:
     loader = cle.Loader(fname, load_debug_info=True)
     elfe = loader.all_elf_objects[0]
 
@@ -232,6 +228,7 @@ def process_file(fname: str, cu_name: str = None) -> dict[str, BBInfo]:
             print(f"Function @{addr:x} {func.name}")
             fbs.append(process_func(loader, func))
         ret[cu.name] = BBInfo(cu.name, fbs)
+
     return ret
 
 

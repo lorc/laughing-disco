@@ -147,6 +147,16 @@ class ASTEntry:
             return False
         return self.data["opcode"] in ("||", "&&", "!")
 
+    def skip_casts(self) -> ASTEntry:
+        if self.kind == "ImplicitCastExpr":
+            return self.inner[0].skip_casts()
+        return self
+
+    def get_var_name(self) -> str:
+        assert self.kind == "DeclRefExpr"
+        ref = self.data["referencedDecl"]
+        return ref.data["name"]
+
 
 class SAST:
     """Simple AST. Base class for other AST objects. Provides basic interface"""
@@ -912,16 +922,35 @@ class BasicBlock:
             add += f" alt=@{self.alt.insns[0].address:x}"
         return f"<BasicBlock '{self.type}{add}'>"
 
+    def enumerate_sast(self, idx: Optinal[int] = None):
+        if self.sast:
+            print(f"{self=} {self.sast=}")
+            # # Special case: we are first block with SAST, so we enumerate ourselves
+            # if not idx:
+            #     idx = 0
+            #     self.sast_idx = idx
+            #     idx += 1
+
+            # if self.next and self.next.sast == self.sast.children[0]:
+
+        ############
+        if self.next:
+            self.next.enumerate_sast(idx)
+        if self.alt:
+            self.alt.enumerate_sast(idx)
+
     def try_merge(self):
         # Prepare for new round, recursively
         self.__reset_counters()
         # Count inbound edges, recursively
         self.__count_inbound()
         # Merge simple nodes, recursively
-        self.__try_merge(None)
+        return self.__try_merge(None)
 
     def __can_merge(self, prev):
         if self.next and not self.alt and self.__inbound_cnt == 1 and self.next.__inbound_cnt == 1 and prev:
+            return True
+        if self.next and not self.alt and self.__inbound_cnt == 0 and self.next.__inbound_cnt == 1 and not prev:
             return True
         # Special case for single branch instruction
         if self.insns and len(self.insns) == 1:
@@ -931,25 +960,28 @@ class BasicBlock:
         return False
 
     def __try_merge(self, prev: BasicBlock):
-        print(f"try_merge {self}")
+        if self.next:
+            self.next.__try_merge(self)
+        if self.alt:
+            self.alt.__try_merge(self)
+        print(f"try_merge {self} ({self.__inbound_cnt=}) into {self.next} ({prev=})")
+        ret = self
         if self.__can_merge(prev):
             assert not self.sast
             print(f"Merging {self} to {self.next}")
             # Remove self
-            if prev.next == self:
-                prev.next = self.next
-            elif prev.alt == self:
-                prev.alt = self.next
+            if prev:
+                if prev.next == self:
+                    prev.next = self.next
+                elif prev.alt == self:
+                    prev.alt = self.next
+                else:
+                    assert False
             else:
-                assert False
+                ret = self.next
             # move own instructions to the next node
             self.next.insns[:0] = self.insns
-        else:
-            prev = self
-        if self.next:
-            self.next.__try_merge(prev)
-        if self.alt:
-            self.alt.__try_merge(prev)
+        return ret
 
     def __reset_counters(self):
         self.__inbound_cnt = 0

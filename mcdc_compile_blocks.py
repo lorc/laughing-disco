@@ -5,6 +5,8 @@ import json
 import multiprocessing
 import os
 import subprocess
+import logging
+
 from dataclasses import dataclass, fields
 from typing import Unpack
 from copy import copy
@@ -12,6 +14,8 @@ from copy import copy
 from mcdc_tool_definitions import ASTEntry, BBInfo, BasicBlock, FunctionBlocks, SAST, BoolExpression, BoolVar, NonBoolExpression
 
 import mcdc_tool_parser
+
+log = logging.getLogger(__name__)
 
 
 def main():
@@ -62,8 +66,10 @@ def get_blocks(compile_commands: str, compile_unit: str = None) -> dict(str, BBI
             # for e in mcdcinfo.expressions:
             #     assert isinstance(e, BoolExpression)
             ret[bbinfo.compile_unit] = bbinfo
-            for fb in bbinfo.function_blocks:
-                dump_to_dot(fb.function_name + "_comp", fb.function_name, fb.root_block)
+
+
+#            for fb in bbinfo.function_blocks:
+#                dump_to_dot(fb.function_name + "_comp", fb.function_name, fb.root_block)
     return ret
 
 
@@ -109,6 +115,7 @@ def process_root(root: ASTEntry) -> list[FunctionBlocks]:
 
 
 def dump_to_dot(fname: str, func_name: str, block: BasicBlock):
+    print(f"Saving graph to {fname}.dot")
     dot = open(fname + ".dot", "wt")
     seen_blocks = set()
 
@@ -142,7 +149,7 @@ def dump_to_dot(fname: str, func_name: str, block: BasicBlock):
 def handle_function(ast: ASTEntry) -> FunctionBlocks:
     cfg = CFGBuilder()
     root_block = cfg.process_ast(ast)
-
+    root_block.enumerate_sast()
     #TODO?
     #    root_block.try_merge()
     return FunctionBlocks(ast, ast.data["name"], root_block)
@@ -150,8 +157,8 @@ def handle_function(ast: ASTEntry) -> FunctionBlocks:
 
 @dataclass
 class LogicOp:
-    rhs: BasicBlock
     lhs: BasicBlock
+    rhs: BasicBlock
     sast: SAST
     sast_idx = 0
 
@@ -247,7 +254,7 @@ class CFGBuilder:
         cond_op = ast.inner[0]
         if cond_op.is_logic_op():
             op_info = self.process_logic_op(cond_op, true_block, false_block)
-            cond_block = op_info.rhs
+            cond_block = op_info.lhs
         else:
             cond_block = BasicBlock("if", None, true_block, false_block)
 
@@ -256,49 +263,76 @@ class CFGBuilder:
 
     def process_logic_op(self, ast: ASTEntry, true_block: BasicBlock,
                          false_block: BasicBlock) -> LogicOp:
-        rhs = ast.inner[0]
-        if rhs.is_logic_op():
-            # TODO: Recurse in
-            raise NotImplementedError()
+        opcode = ast.data["opcode"]
+        suffix1 = ""
+        if ast.inner[0].kind == "ImplicitCastExpr":
+            suffix1 = f"[{ast.inner[0].skip_casts().get_var_name()}]"
+        suffix2 = ""
+        if ast.inner[1].kind == "ImplicitCastExpr":
+            suffix2 = f"[{ast.inner[1].skip_casts().get_var_name()}]"
+        print(
+            f"Processing AST at {ast.get_loc()}: {ast.inner[0].kind} {suffix1} {opcode} {ast.inner[1].kind} {suffix2}"
+        )
+        rhs_ast = ast.inner[1]
+        if rhs_ast.is_logic_op():
+            ret = self.process_logic_op(rhs_ast, true_block, false_block)
+            rhsblock = ret.lhs
+            exit_block = ret.rhs
+            rhs_sast = ret.sast
         else:
             # TODO: This is not always a var
-            rhs_sast = BoolVar(rhs.get_loc(), "TODO", rhs)
-        # TODO: Use self.next right here?
-        rhsblock = BasicBlock("rhs")
-        # TODO: Update based on top-level SAST, somehow
-        rhsblock.sast_idx = 0
-        lhs = ast.inner[1]
-        if lhs.is_logic_op():
-            # TODO: Recurse in
-            raise NotImplementedError()
-        else:
-            # TODO: This is not always a var
-            lhs_sast = BoolVar(lhs.get_loc(), "TODO", lhs)
-        # TODO: Use self.next right here?
-        lhsblock = BasicBlock("lhs")
-        # TODO: Update based on top-level SAST, somehow
-        lhsblock.sast_idx = 1
+            #if rhs.kind != ""
+            rhs_ast = rhs_ast.skip_casts()
+            if rhs_ast.kind != "DeclRefExpr":
+                self.cur = rhsblock
+                rhsblock = self.process(rhs_ast)
+                # raise NotImplementedError(f"Don't know how to handle {rhs_ast.kind} ({rhs_ast})")
+
+            # TODO: Move this stuff to self.process()
+            rhs_sast = BoolVar(rhs_ast.get_loc(), rhs_ast.get_var_name(), rhs_ast)
+            rhsblock = BasicBlock(f"{opcode} ({rhs_ast.get_var_name()})", rhs_sast, true_block,
+                                  false_block)
+            print(f"Created RHS block {rhsblock.type}")
+            exit_block = rhsblock
+
+        lhs_ast = ast.inner[0]
+        if lhs_ast.is_logic_op():
+            if opcode == "||":
+                false_block = rhsblock
+            else:
+                true_block = rhsblock
+            ret = self.process_logic_op(lhs_ast, true_block, false_block)
+            # Now we need just a SAST for ourselves
+            sast = BoolExpression(ast.get_loc(), ast, ret.sast, BoolExpression.from_opcode(opcode),
+                                  rhs_sast)
+            return LogicOp(ret.lhs, rhsblock, sast)
+
+        lhs_ast = lhs_ast.skip_casts()
+        if lhs_ast.kind != "DeclRefExpr":
+            raise NotImplementedError(f"Don't know how to handle {lhs_ast.kind} ({lhs_ast})")
+
+        lhs_sast = BoolVar(lhs_ast.get_loc(), lhs_ast.get_var_name(), lhs_ast)
+        lhsblock = BasicBlock(f"{opcode} ({lhs_ast.get_var_name()})", lhs_ast)
+        print(f"Created LHS block {lhsblock.type}")
         # TODO: Add option to pass/extend it on lower recursion levels
-        sast = BoolExpression(ast.get_loc(), ast, rhs_sast,
-                              BoolExpression.from_opcode(ast.data["opcode"]), lhs_sast)
-        rhsblock.sast = sast
-        lhsblock.sast = sast
+        sast = BoolExpression(ast.get_loc(), ast, lhs_sast,
+                              BoolExpression.from_opcode(ast.data["opcode"]), rhs_sast)
+
+        self.cur = lhsblock
+        #entry_lhsblock = self.process(lhs_ast)
+        entry_lhsblock = lhsblock
         match ast.data["opcode"]:
             case "&&":
-                rhsblock.next = lhsblock
-                rhsblock.alt = false_block
-                lhsblock.next = true_block
+                lhsblock.next = rhsblock
                 lhsblock.alt = false_block
             case "||":
-                rhsblock.next = true_block
-                rhsblock.alt = lhsblock
                 lhsblock.next = true_block
-                lhsblock.alt = false_block
+                lhsblock.alt = rhsblock
             case "!":
                 raise NotImplementedError()
             case _:
                 assert False
-        return LogicOp(rhsblock, lhsblock, sast)
+        return LogicOp(entry_lhsblock, exit_block, sast)
 
     def process_simple(self, ast: ASTEntry):
         for x in reversed(ast.inner):
@@ -306,7 +340,7 @@ class CFGBuilder:
         return self.cur
 
     def process(self, ast: ASTEntry) -> Optinal[BasicBlock]:
-        print(f"Processing {ast.kind} at {ast.get_loc()}")
+        #        print(f"Processing {ast.kind} at {ast.get_loc()}")
 
         handler = CFGBuilder.__handlers.get(ast.kind)
         if handler:
