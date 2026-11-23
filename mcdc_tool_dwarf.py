@@ -1837,8 +1837,6 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
         match instructions[new_state.instr_idx].mnemonic:
             case "b.lt" | "b.le" | "b.ls" | "b.lo" | "cbz":
                 inverted = op_is_gt_ge
-                if new_state.adds:
-                    inverted = not inverted
 
                 mnemonic = instructions[new_state.instr_idx].mnemonic
                 if not cmp_to_imm(instructions, new_state.instr_idx) and \
@@ -1850,8 +1848,6 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "b.gt" | "b.ge" | "b.hs" | "b.hi" | "b.ne" | "cbnz":
                 inverted = not op_is_gt_ge
-                if new_state.adds:
-                    inverted = not inverted
 
                 mnemonic = instructions[new_state.instr_idx].mnemonic
                 if not cmp_to_imm(instructions, new_state.instr_idx) and \
@@ -1865,16 +1861,12 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 is_unsigned = "unsigned" in str(e.a).lower() \
                                and not (isinstance(e.b, IntLiteral) and e.b.value == 0)
                 inverted = (not op_is_gt_ge) if is_unsigned else op_is_gt_ge
-                if new_state.adds:
-                    inverted = not inverted
                 match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbz":
                 is_unsigned = "unsigned" in str(e.a).lower() \
                                and not (isinstance(e.b, IntLiteral) and e.b.value == 0)
                 inverted = op_is_gt_ge if is_unsigned else (not op_is_gt_ge)
-                if new_state.adds:
-                    inverted = not inverted
                 match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "b.eq" if new_state.adds:
