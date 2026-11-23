@@ -1,11 +1,11 @@
 TN:MCDC_Test_Report
 SF:tests/qual/basics-009.c
-BRDA:6,0,0,8
-BRDA:6,0,1,1
+BRDA:6,0,0,1
+BRDA:6,0,1,8
 MCDC:6,0,t,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 255>))
 MCDC:6,0,f,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 255>))
-BRDA:8,0,0,7
-BRDA:8,0,1,1
+BRDA:8,0,0,1
+BRDA:8,0,1,7
 MCDC:8,0,t,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 1>))
 MCDC:8,0,f,1,0,(<NonBoolVar (int)a> LT (<NonBoolExpr> - <IntLiteral 1>))
 BRDA:10,0,0,1
