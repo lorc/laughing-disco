@@ -1610,6 +1610,14 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             case _:
                 raise Exception(f"Don't know what to do with operand {operand}")
 
+    def cond_is_inlined_cmp(operand: SAST) -> bool:
+        if isinstance(operand, BoolExpression) and \
+           operand.op == BoolExpression.OP_IMPLICIT_CAST:
+            operand = operand.a
+        return type(operand).__name__ == "FCall" and \
+               isinstance(operand.fname, NonBoolVar) and \
+               is_inlined_function(cu, operand.fname.name)
+
     def handle_and_or(e: BoolExpression, state: MatchState) -> MatchState:
         if isinstance(e.a, BoolExpression):
             new_state = handle_operand(e.a, state)
@@ -1641,13 +1649,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
                     new_state.instr_idx += 2
-                case "b.eq":
+                case "b.eq" | "b.ne":
+                    inverted = instructions[new_state.instr_idx].mnemonic == "b.eq"
+                    if cond_is_inlined_cmp(e.a):
+                        inverted = not inverted
                     match_tail_branch(instructions, new_state.instr_idx)
-                    ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.a))
-                    new_state.instr_idx += 2
-                case "b.ne":
-                    match_tail_branch(instructions, new_state.instr_idx)
-                    ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.a))
+                    ret.append(TracePoint(instructions[new_state.instr_idx].address,
+                                          inverted, e.a))
                     new_state.instr_idx += 2
                 case mnemonic:
                     raise MatchError(
@@ -1695,13 +1703,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     match_tail_branch(instructions, new_state.instr_idx)
                     ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
                     new_state.instr_idx += 2
-                case "b.eq":
+                case "b.eq" | "b.ne":
+                    inverted = instructions[new_state.instr_idx].mnemonic == "b.eq"
+                    if cond_is_inlined_cmp(e.b):
+                        inverted = not inverted
                     match_tail_branch(instructions, new_state.instr_idx)
-                    ret.append(TracePoint(instructions[new_state.instr_idx].address, True, e.b))
-                    new_state.instr_idx += 2
-                case "b.ne":
-                    match_tail_branch(instructions, new_state.instr_idx)
-                    ret.append(TracePoint(instructions[new_state.instr_idx].address, False, e.b))
+                    ret.append(TracePoint(instructions[new_state.instr_idx].address,
+                                          inverted, e.b))
                     new_state.instr_idx += 2
                 case "and" if new_state.instr_idx + 1 < len(instructions):
                     instr = instructions[new_state.instr_idx]
@@ -1899,13 +1907,20 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             return state
 
         match instructions[state.instr_idx].mnemonic:
-            case "tbz" | "cbz" | "b.eq":
+            case "tbz" | "cbz":
                 match_tail_branch(instructions, state.instr_idx)
                 ret.append(TracePoint(instructions[state.instr_idx].address, True, e))
                 return state.advance(2)
-            case "cbnz" | "tbnz" | "b.ne":
+            case "cbnz" | "tbnz":
                 match_tail_branch(instructions, state.instr_idx)
                 ret.append(TracePoint(instructions[state.instr_idx].address, False, e))
+                return state.advance(2)
+            case "b.eq" | "b.ne":
+                inverted = instructions[state.instr_idx].mnemonic == "b.eq"
+                if cond_is_inlined_cmp(e.a):
+                    inverted = not inverted
+                match_tail_branch(instructions, state.instr_idx)
+                ret.append(TracePoint(instructions[state.instr_idx].address, inverted, e))
                 return state.advance(2)
             case "csel" | "csinc" | "cset" | "cinc" | "csetm" | "csinv":
                 instr = instructions[state.instr_idx]
