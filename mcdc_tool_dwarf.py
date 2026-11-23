@@ -2047,7 +2047,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
             TRACE_MATCH(f"Found case {e.a.name} == {e.b.name}")
             instr = instructions[state.instr_idx]
             if instr.mnemonic == "cbnz":
-                ret.append(TracePoint(instructions[state.instr_idx].address, not inverted, e))
+                ret.append(TracePoint(instructions[state.instr_idx].address, inverted, e))
                 match_tail_branch(instructions, state.instr_idx)
                 return state.advance(2).derive(target_reg=None, partial=False)
 
