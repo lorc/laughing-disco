@@ -2058,7 +2058,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_tail_branch(instructions, state.instr_idx)
                 return state.advance(2).derive(target_reg=None, partial=False)
 
-        b_const = isinstance(e.b, IntLiteral)
+        b_zero = isinstance(e.b, IntLiteral) and e.b.value == 0
 
         op_a = e.a
         if isinstance(e.a, BoolExpression) and \
@@ -2129,7 +2129,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_tail_branch(instructions, idx)
 
-                if b_const and e.b.value != 0:
+                if not b_zero:
                     inverted = not inverted
 
                 ret.append(TracePoint(instructions[idx].address, not inverted, e))
@@ -2137,7 +2137,7 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_instr_reg_operand(instructions[idx], 0, new_state.target_reg)
                 match_tail_branch(instructions, idx)
 
-                if b_const and e.b.value != 0:
+                if not b_zero:
                     inverted = not inverted
 
                 ret.append(TracePoint(instructions[idx].address, inverted, e))
