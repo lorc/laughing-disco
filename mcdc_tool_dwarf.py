@@ -1985,6 +1985,15 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 raise MatchError(
                     f"Don't know how to handle implicit bool cast instruction {mnemonic}")
 
+    def inlined_ret_folded(operand: SAST, idx: int) -> bool:
+        if not isinstance(operand, FCall) or not isinstance(operand.fname, NonBoolVar):
+            return False
+        prev = instructions[idx - 1]
+        if not prev.mnemonic.startswith(("ldr", "ldur")):
+            return False
+        return any(inline.name == operand.fname.name and inline.high_addr == prev.address
+                   for inline in inlines)
+
     @fuzzy_matcher
     def handle_op_not_tail(e: BoolExpression, state: MatchState) -> MatchState:
         # Return early if we are not trying to handle top-level NOT expression
@@ -2000,7 +2009,8 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 return state.advance(2).derive(partial=True)
             case "tbz" | "cbz" | "b.eq":
                 match_tail_branch(instructions, state.instr_idx)
-                ret.append(TracePoint(instructions[state.instr_idx].address, True, e.a))
+                inverted = not inlined_ret_folded(e.a, state.instr_idx)
+                ret.append(TracePoint(instructions[state.instr_idx].address, inverted, e.a))
                 return state.advance(2).derive(partial=True)
             case "eor" | "bic":
                 instr = instructions[state.instr_idx]
