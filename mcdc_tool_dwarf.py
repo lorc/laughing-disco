@@ -1105,6 +1105,16 @@ def reg_cmp(r1: str, r2: str):
     return r1 == r2
 
 
+def int_const_value(operand: SAST) -> Optional[int]:
+    """Value of an integer literal, with an optional unary minus"""
+    if isinstance(operand, IntLiteral):
+        return operand.value
+    if isinstance(operand, NonBoolExpression) and operand.opcode == "-" and \
+            len(operand.operands) == 1 and isinstance(operand.operands[0], IntLiteral):
+        return -operand.operands[0].value
+    return None
+
+
 def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                     instructions: list[capstone.CsInsn], inlines: list[DwarfInlinedFunc]):
 
@@ -1858,15 +1868,13 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                 match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbnz":
-                is_unsigned = "unsigned" in str(e.a).lower() \
-                               and not (isinstance(e.b, IntLiteral) and e.b.value == 0)
-                inverted = (not op_is_gt_ge) if is_unsigned else op_is_gt_ge
+                is_sign_check = int_const_value(e.b) in (0, -1)
+                inverted = op_is_gt_ge if is_sign_check else (not op_is_gt_ge)
                 match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "tbz":
-                is_unsigned = "unsigned" in str(e.a).lower() \
-                               and not (isinstance(e.b, IntLiteral) and e.b.value == 0)
-                inverted = op_is_gt_ge if is_unsigned else (not op_is_gt_ge)
+                is_sign_check = int_const_value(e.b) in (0, -1)
+                inverted = (not op_is_gt_ge) if is_sign_check else op_is_gt_ge
                 match_tail_branch(instructions, new_state.instr_idx)
                 ret.append(TracePoint(instructions[new_state.instr_idx].address, inverted, e))
             case "b.eq" if new_state.adds:
