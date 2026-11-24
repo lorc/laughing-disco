@@ -611,7 +611,7 @@ def process_cu(cu: CompileUnit, elffile: ELFFile, dis, expressions: list[SAST],
                 insn for insn in instructions if not _addr_inside_inlines(skip_inlines, insn.address)
             ]
             instructions = _drop_merge_blocks(instructions, generated, inline_bounds)
-            ret.append(match_bool_expr(cu, elffile, next_expr.expr, instructions, inlines))
+            ret.append(match_bool_expr(cu, elffile, dis, next_expr.expr, instructions, inlines))
         except TypeError:
             raise
         except Exception as e:
@@ -1115,7 +1115,7 @@ def int_const_value(operand: SAST) -> Optional[int]:
     return None
 
 
-def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
+def match_bool_expr(cu: CompileUnit, elf: ELFFile, dis, expr: BoolExpression,
                     instructions: list[capstone.CsInsn], inlines: list[DwarfInlinedFunc]):
 
     FUZZ_MATCHER_FAILURES = 0
@@ -1628,8 +1628,39 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
                isinstance(operand.fname, NonBoolVar) and \
                is_inlined_function(cu, operand.fname.name)
 
+    def const_branch_at(idx: int) -> bool:
+        """Whether the branch at idx tests a register holding a constant"""
+        if instructions[idx].mnemonic not in ("tbz", "tbnz", "cbz", "cbnz"):
+            return False
+        reg = get_instr_reg_operand(instructions[idx], 0)
+
+        prev = instructions[:idx]
+        if not prev:
+            start = instructions[0].address
+            try:
+                data = get_code_for_range(elf, start - 32, start - 4)
+                prev = list(dis.disasm(data, start - 32))
+            except Exception:
+                return False
+
+        for instr in reversed(prev):
+            if instr.mnemonic == "b":
+                return False
+            if not reg_cmp(get_instr_reg_operand(instr, 0), reg):
+                continue
+            if instr.mnemonic not in ("mov", "movz", "movn"):
+                return False
+            last = instr.operands[-1]
+            return last.type == capstone.arm64_const.ARM64_OP_IMM or \
+                instr.reg_name(last.reg) in ("wzr", "xzr")
+        return False
+
     def handle_and_or(e: BoolExpression, state: MatchState) -> MatchState:
-        if isinstance(e.a, BoolExpression):
+        if e.a.is_const():
+            new_state = state
+            if const_branch_at(new_state.instr_idx):
+                new_state.instr_idx += 2
+        elif isinstance(e.a, BoolExpression):
             new_state = handle_operand(e.a, state)
             new_state = match_optional_store(new_state)
         else:
