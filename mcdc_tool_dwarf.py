@@ -1771,8 +1771,18 @@ def match_bool_expr(cu: CompileUnit, elf: ELFFile, expr: BoolExpression,
 
         new_state = op2_state
 
+        def operand_is_const(operand: SAST) -> bool:
+            """Whether an operand is built only from compile time constants"""
+            if isinstance(operand, (IntLiteral, SizeOf, EnumConst)):
+                return True
+            if isinstance(operand, NonBoolExpression):
+                return all(operand_is_const(o) for o in operand.operands)
+            return False
+
         def cmp_to_imm(instructions, idx) -> bool:
             """Check whether compare was to immediate value or not"""
+            if operand_is_const(e.b):
+                return True
             for curr in range(1, len(instructions)):
                 if idx - curr < 0:
                     break
